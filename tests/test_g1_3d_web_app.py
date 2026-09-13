@@ -36,13 +36,14 @@ class G13DWebAppTest(unittest.TestCase):
         self.client.__exit__(None, None, None)
         self.temporary_directory.cleanup()
 
-    def test_ui_exposes_three_workspaces_and_six_camera_presets(self) -> None:
+    def test_ui_exposes_four_workspaces_and_six_camera_presets(self) -> None:
         response = self.client.get("/")
 
         self.assertEqual(response.status_code, 200)
         self.assertIn("Pose Recorder", response.text)
         self.assertIn("Pose Composer", response.text)
-        self.assertIn("Action", response.text)
+        self.assertIn("Action Composer", response.text)
+        self.assertIn("Action Player", response.text)
         for camera_label in (
             "Front",
             "Back",
@@ -58,6 +59,62 @@ class G13DWebAppTest(unittest.TestCase):
         )
         self.assertNotIn("Viser scene connects in the next step", response.text)
         self.assertEqual(response.text.count("data-camera-view="), 6)
+
+    def test_action_player_renders_import_and_joint_ownership_controls(self) -> None:
+        response = self.client.get("/")
+
+        self.assertEqual(response.status_code, 200)
+        self.assertIn('id="action-player-format"', response.text)
+        self.assertIn('id="action-player-file"', response.text)
+        self.assertIn("Action Recorder NPZ", response.text)
+        self.assertIn("Kimodo G1 NPZ", response.text)
+        self.assertIn("ARDY session PKL", response.text)
+        self.assertIn("Lower body", response.text)
+        self.assertIn("Standing", response.text)
+        self.assertIn('id="action-player-frame"', response.text)
+        self.assertIn('id="action-player-save-left"', response.text)
+        self.assertIn('id="action-player-save-right"', response.text)
+        self.assertIn("action_player.js", response.text)
+
+    def test_action_player_loads_native_npz_and_starts_playback(self) -> None:
+        path = Path(__file__).resolve().parents[1] / "data/actions/trajectories/present_left.npz"
+        loaded = self.client.post(
+            "/ui/g1-3d/action-player/load",
+            params={"source_format": "native_npz", "filename": path.name},
+            content=path.read_bytes(),
+            headers={"content-type": "application/octet-stream"},
+        )
+
+        self.assertEqual(loaded.status_code, 200)
+        self.assertEqual(loaded.json()["arm_joint_count"], 14)
+        started = self.client.post(
+            "/ui/g1-3d/action-player/playback/play",
+            json={"enabled": False},
+        )
+        self.assertEqual(started.status_code, 200)
+        self.assertEqual(started.json()["state"], "playing")
+        self.assertEqual(started.json()["source"], "uploaded")
+        paused = self.client.post("/ui/g1-3d/action-player/playback/pause")
+        selected = self.client.post(
+            "/ui/g1-3d/action-player/playback/seek",
+            json={"sample_index": 50},
+        )
+        saved = self.client.post(
+            "/ui/g1-3d/action-player/poses",
+            json={
+                "pose_type": "left_arm",
+                "name": "selected_action_frame",
+                "notes": "Selected from uploaded motion",
+                "overwrite": False,
+            },
+        )
+
+        self.assertEqual(paused.json()["state"], "paused")
+        self.assertEqual(selected.json()["sample_index"], 50)
+        self.assertEqual(saved.status_code, 200)
+        self.assertEqual(saved.json()["pose_type"], "left_arm")
+        self.assertEqual(saved.json()["sample_index"], 50)
+        self.client.post("/ui/g1-3d/action-player/playback/stop")
 
     def test_pose_recorder_renders_anatomical_joint_inspector(self) -> None:
         response = self.client.get("/")
@@ -228,12 +285,13 @@ class G13DWebAppTest(unittest.TestCase):
         )
         self.assertEqual(saved.notes, "Keeps the base robot-right arm")
 
-    def test_action_panel_renders_complete_pose_sequence_controls(self) -> None:
+    def test_action_composer_renders_complete_pose_sequence_controls(self) -> None:
         self._save_action_source()
 
         response = self.client.get("/")
 
         self.assertEqual(response.status_code, 200)
+        self.assertIn("Action Composer", response.text)
         self.assertIn("Every action starts and returns to", response.text)
         self.assertIn("base/concierge_init", response.text)
         self.assertIn("Composed · composed_greeting", response.text)
@@ -336,6 +394,7 @@ class G13DWebAppTest(unittest.TestCase):
 
         self.assertEqual(started.json()["state"], "playing")
         self.assertEqual(started.json()["phase"], "keyframe")
+        self.assertEqual(started.json()["source"], "compiled")
         self.assertEqual(started.json()["target_pose_name"], "concierge_init")
         self.assertEqual(paused.json()["state"], "paused")
         self.assertEqual(resumed.json()["state"], "playing")
@@ -350,6 +409,7 @@ class G13DWebAppTest(unittest.TestCase):
 
         self.assertEqual(state["type"], "action_playback")
         self.assertEqual(state["state"], "idle")
+        self.assertIsNone(state["source"])
         self.assertEqual(state["progress"], 0.0)
         self.assertEqual(state["phase"], "none")
         self.assertIsNone(state["target_pose_name"])

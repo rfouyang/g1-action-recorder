@@ -150,6 +150,10 @@ class ActionServiceTest(unittest.TestCase):
         self.assertEqual(saved_path.name, "welcome_sequence.npz")
         self.assertEqual(self.service.list_trajectories(), ("welcome_sequence",))
         restored = self.service.load_trajectory(name="welcome_sequence")
+        restored_from_memory = self.service.load_trajectory_bytes(
+            content=saved_path.read_bytes(),
+            source_label=saved_path.name,
+        )
         self.assertEqual(restored.action_name, trajectory.action_name)
         self.assertEqual(restored.robot_model_id, trajectory.robot_model_id)
         self.assertEqual(restored.joint_names, trajectory.joint_names)
@@ -162,6 +166,10 @@ class ActionServiceTest(unittest.TestCase):
         self.assertEqual(restored.requested_sample_frequency_hz, 25.0)
         np.testing.assert_array_equal(restored.timestamps, trajectory.timestamps)
         np.testing.assert_array_equal(restored.joint_positions, trajectory.joint_positions)
+        np.testing.assert_array_equal(
+            restored_from_memory.joint_positions,
+            trajectory.joint_positions,
+        )
         with self.assertRaises(FileExistsError):
             self.service.save_trajectory(trajectory=trajectory)
         self.service.save_trajectory(trajectory=trajectory, overwrite=True)

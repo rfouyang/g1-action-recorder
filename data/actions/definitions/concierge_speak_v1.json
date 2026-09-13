@@ -1,0 +1,101 @@
+{
+  "schema_version": 1,
+  "name": "concierge_speak_v1",
+  "robot_model_id": "unitree_g1_29dof_rev_1_0_fake_hand",
+  "initial_pose": {
+    "pose_type": "base",
+    "name": "concierge_init"
+  },
+  "transitions": [
+    {
+      "target_pose": {
+        "pose_type": "composed",
+        "name": "concierge_speak_1"
+      },
+      "duration_seconds": 1.0,
+      "hold_seconds": 0.0
+    },
+    {
+      "target_pose": {
+        "pose_type": "composed",
+        "name": "concierge_speak_2"
+      },
+      "duration_seconds": 1.0,
+      "hold_seconds": 0.0
+    },
+    {
+      "target_pose": {
+        "pose_type": "composed",
+        "name": "concierge_speak_3"
+      },
+      "duration_seconds": 1.0,
+      "hold_seconds": 0.0
+    },
+    {
+      "target_pose": {
+        "pose_type": "composed",
+        "name": "concierge_speak_4"
+      },
+      "duration_seconds": 1.0,
+      "hold_seconds": 0.0
+    },
+    {
+      "target_pose": {
+        "pose_type": "composed",
+        "name": "concierge_speak_5"
+      },
+      "duration_seconds": 1.0,
+      "hold_seconds": 0.0
+    },
+    {
+      "target_pose": {
+        "pose_type": "composed",
+        "name": "concierge_speak_6"
+      },
+      "duration_seconds": 1.0,
+      "hold_seconds": 0.0
+    },
+    {
+      "target_pose": {
+        "pose_type": "composed",
+        "name": "concierge_speak_7"
+      },
+      "duration_seconds": 1.0,
+      "hold_seconds": 0.0
+    },
+    {
+      "target_pose": {
+        "pose_type": "composed",
+        "name": "concierge_speak_8"
+      },
+      "duration_seconds": 1.0,
+      "hold_seconds": 0.0
+    },
+    {
+      "target_pose": {
+        "pose_type": "composed",
+        "name": "concierge_speak_9"
+      },
+      "duration_seconds": 1.0,
+      "hold_seconds": 0.0
+    },
+    {
+      "target_pose": {
+        "pose_type": "composed",
+        "name": "concierge_speak_10"
+      },
+      "duration_seconds": 1.0,
+      "hold_seconds": 0.0
+    },
+    {
+      "target_pose": {
+        "pose_type": "base",
+        "name": "concierge_init"
+      },
+      "duration_seconds": 1.0,
+      "hold_seconds": 0.0
+    }
+  ],
+  "created_at": "2026-09-13T06:10:17.729636Z",
+  "notes": ""
+}

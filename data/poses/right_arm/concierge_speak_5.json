@@ -1,0 +1,19 @@
+{
+  "schema_version": 1,
+  "name": "concierge_speak_5",
+  "pose_type": "right_arm",
+  "robot_model_id": "unitree_g1_29dof_rev_1_0_fake_hand",
+  "joint_values": {
+    "right_shoulder_pitch_joint": 0.22560446240732532,
+    "right_shoulder_roll_joint": -0.31193979500591984,
+    "right_shoulder_yaw_joint": 0.15258782891385667,
+    "right_elbow_joint": -0.5426408286499785,
+    "right_wrist_roll_joint": -0.027117846685529814,
+    "right_wrist_pitch_joint": 0.17470943146071796,
+    "right_wrist_yaw_joint": 0.13389124605058184
+  },
+  "source": "simulation",
+  "created_at": "2026-09-13T06:06:27.132053Z",
+  "source_parts": {},
+  "notes": "Captured from Action Player action 'speaking', sample 139/1376 at 5.520000 seconds."
+}

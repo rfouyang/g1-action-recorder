@@ -5,7 +5,9 @@ from __future__ import annotations
 import logging
 import os
 import tempfile
+import zipfile
 from collections.abc import Mapping
+from io import BytesIO
 from pathlib import Path
 
 import numpy as np
@@ -57,6 +59,19 @@ class NumpyArchiveHelper:
         if path.suffix.lower() != ".npz":
             raise ValueError(f"NumPy archive path must end in .npz: {path}")
         with np.load(path, allow_pickle=False) as archive:
+            return {name: archive[name].copy() for name in archive.files}
+
+    def read_npz_bytes(self, *, content: bytes) -> dict[str, NDArray[np.generic]]:
+        """Read an uploaded NPZ archive without enabling object deserialization."""
+        if not content:
+            raise ValueError("NumPy archive is empty")
+        try:
+            loaded = np.load(BytesIO(content), allow_pickle=False)
+        except (OSError, ValueError, zipfile.BadZipFile) as error:
+            raise ValueError(f"Could not read NumPy archive: {error}") from error
+        if not isinstance(loaded, np.lib.npyio.NpzFile):
+            raise ValueError("Uploaded NumPy file must be an NPZ archive, not an NPY array")
+        with loaded as archive:
             return {name: archive[name].copy() for name in archive.files}
 
     def list_npz_files(self, *, directory: Path) -> tuple[Path, ...]:

@@ -21,7 +21,8 @@ class RobotApplicationTest(unittest.TestCase):
             )
 
             self.assertIs(application.action_service.pose_service, application.pose_service)
-            self.assertIs(application.action_playback.simulation, application.simulation)
+            self.assertIs(application.action_player._playback.simulation, application.simulation)
+            self.assertIs(application.action_player.action_service, application.action_service)
             self.assertIs(application.pose_service.schema, application.joint_schema)
             self.assertIs(application.simulation.schema, application.joint_schema)
             self.assertEqual(

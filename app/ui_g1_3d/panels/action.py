@@ -52,10 +52,10 @@ class PreviewActionPoseCommand(BaseModel):
     name: str
 
 
-class ActionPanel:
+class ActionComposerPanel:
     """Author ordered actions while delegating validation to ActionService."""
 
-    name = "Action"
+    name = "Action Composer"
     template = "panels/action.html"
     default_transition_seconds = 1.0
     default_sample_frequency_hz = 25.0

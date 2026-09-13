@@ -48,21 +48,23 @@ app/g1_3d_main.py
 └── component/                  # Pose、Action、Simulation 业务能力
 ```
 
-- `app/ui_g1_3d/`：新的三工作区 Web UI。
+- `app/ui_g1_3d/`：新的四工作区 Web UI。
 - `app/api_g1_3d/`：系统健康、仿真状态、关节更新和 WebSocket。
-- `app/application.py`：持有共享的 `PoseService`、`ActionService` 和
-  `SimulationService`。
+- `app/application.py`：持有共享的 `PoseService`、`ActionService`、
+  `ActionPlayerService` 和 `SimulationService`。定时播放引擎只作为
+  `ActionPlayerService` 的内部依赖存在。
 - UI 不通过 HTTP 调用同进程 API；UI 和 API 分别使用共享业务能力。
 
 ## 新 3D UI 已完成功能
 
 ### 1. 顶部导航
 
-顶部提供三个工作区：
+顶部提供四个工作区：
 
 1. Pose Recorder
 2. Pose Composer
-3. Action
+3. Action Composer
+4. Action Player
 
 左侧编辑区域约占屏幕宽度的三分之一，右侧 Viser 约占三分之二。整体采用
 daisyUI `wireframe` 主题，保持紧凑的机器人研发工具风格。
@@ -107,7 +109,7 @@ daisyUI `wireframe` 主题，保持紧凑的机器人研发工具风格。
 - 可保存最终 `composed` pose，并记录 `source_parts`。
 - 支持同名覆盖保护。
 
-### 5. Action
+### 5. Action Composer
 
 - 固定以 `base/concierge_init` 开始并返回该姿态结束。
 - 中间帧只允许完整的 `base` 或 `composed` pose，不允许直接使用局部手臂 pose。
@@ -128,6 +130,16 @@ daisyUI `wireframe` 主题，保持紧凑的机器人研发工具风格。
 - Moving 状态显示来源 pose → 目标 pose；到达后显示 pose 名称和 keyframe 序号。
 - 已决定不把原五视角 MuJoCo GIF 加入新 UI；交互可视化统一使用 Viser 六视角。
 
+### 6. Action Player
+
+- 支持上传本项目 NPZ、Kimodo NPZ 和受限读取的 ARDY PKL。
+- 所有来源统一转换成机器人左右两臂的 14 个关节。
+- Action Composer 的已编译轨迹与上传轨迹共用一个公开的
+  `ActionPlayerService`；定时线程不再作为第二个应用服务暴露。
+- 播放时每个样本都锁定站立腿部，并让腰部服从
+  `base/concierge_init`，不会采用来源文件中的腿部或腰部动作。
+- 支持暂停、精确选帧、继续播放，以及把当前帧保存成左臂或右臂 pose。
+
 ## API 当前能力
 
 外部客户端可使用：
@@ -144,32 +156,19 @@ API 路由。
 
 ## 验证状态
 
-2026-09-13 最新验证：
+2026-09-13 Action Player 重构验证：
 
-- `uv run python -m unittest discover -s tests`
-  - 101 个测试全部通过（已移除旧 Gradio UI 的对应测试）。
+- Action、Simulation、关节 schema、NPZ archive 和组合根的 EGL 测试：
+  - 38 个测试全部通过。
 - `uv run ruff check .`
   - 通过。
 - `node --check app/ui_g1_3d/static/js/panels/action.js`
+- `node --check app/ui_g1_3d/static/js/panels/action_player.js`
+- `node --check app/ui_g1_3d/static/js/app.js`
   - 通过。
-- `npm run build:css`
-  - 通过。
-- `uv run python app/g1_3d_main.py`
-  - FastAPI 与 Viser 均能正常启动和关闭。
 
-新增 Action 路由测试覆盖：
-
-- 页面控件和完整 pose 来源；
-- action definition 保存、覆盖保护和重新加载；
-- NPZ 编译、重新验证和下载；
-- Action pose 预览更新共享仿真状态。
-- 播放、暂停、恢复和停止路由；
-- 播放状态 WebSocket；
-- 后台播放器的完成、暂停保持、停止复位和循环行为。
-- 根据 NPZ keyframe index 和 hold metadata 区分 transition、keyframe 和 hold。
-
-实际运行 `app/g1_3d_main.py` 后，已使用仓库中的 `test.npz` 完成
-Play → Pause → Resume → Stop 冒烟测试，FastAPI、MuJoCo 和 Viser 均正常关闭。
+`tests.test_g1_3d_web_app` 在当前环境仍会卡在 Viser/TestClient lifespan，
+因此这次没有把该模块记为通过；这是测试宿主问题，不应和组件测试结果混写。
 
 ## 尚未完成 / 下一步建议
 

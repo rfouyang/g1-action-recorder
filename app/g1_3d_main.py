@@ -57,7 +57,7 @@ def create_web_app(
         try:
             yield
         finally:
-            application.action_playback.close()
+            application.action_player.close()
             manager.stop()
 
     web_app = FastAPI(

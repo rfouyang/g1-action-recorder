@@ -43,13 +43,14 @@ remain at the neutral value in the preview.
 uv run python app/g1_3d_main.py
 ```
 
-Open `http://127.0.0.1:8000`. The page exposes Pose Recorder, Pose Composer, and
-Action workspaces, while `GET /api/g1/system/health` verifies the independent
-REST surface. The embedded Viser scene loads the G1 URDF once and tracks the
-shared MuJoCo joint state at up to 30 Hz. Mouse orbit, pan, and zoom remain
-native Viser interactions, and the six buttons below the viewer apply
-robot-relative camera presets. Those presets use a tighter 2.30 m orbit and a
-45-degree vertical field of view so the robot fills more of the viewer.
+Open `http://127.0.0.1:8000`. The page exposes Pose Recorder, Pose Composer,
+Action Composer, and Action Player workspaces. `GET /api/g1/system/health`
+verifies the independent REST surface. The embedded Viser scene loads the G1
+URDF once and tracks the shared MuJoCo joint state at up to 30 Hz. Mouse orbit,
+pan, and zoom remain native Viser interactions, and the six buttons below the
+viewer apply robot-relative camera presets. Those presets use a tighter 2.30 m
+orbit and a 45-degree vertical field of view so the robot fills more of the
+viewer.
 You can also right-click `app/g1_3d_main.py` in the IDE and run it directly.
 The entrypoint selects EGL for MuJoCo and rebuilds stale daisyUI styles itself.
 
@@ -192,13 +193,13 @@ It generates and saves a temporary 25 FPS trajectory, reloads that NPZ, and
 writes `data/action_previews/concierge_presentation_demo.gif`. Generated action
 previews are ignored by Git and may be regenerated in place.
 
-## Action authoring UI
+## Action Composer UI
 
-The top-level Action tab keeps `base/concierge_init` as the fixed first and last
-keyframes. Choose a saved complete base or composed pose, set the travel time
-into it and how long to hold it, then click **Add frame**. A hold of zero means
-no pause. Repeat this for as many intermediate frames as needed, then set the
-final return duration.
+The top-level Action Composer tab keeps `base/concierge_init` as the fixed first
+and last keyframes. Choose a saved complete base or composed pose, set the
+travel time into it and how long to hold it, then click **Add frame**. A hold of
+zero means no pause. Repeat this for as many intermediate frames as needed,
+then set the final return duration.
 
 - **Save definition** writes the editable JSON action definition.
 - **Compile NPZ** generates and downloads the time-sampled trajectory.
@@ -210,3 +211,31 @@ Existing JSON and NPZ files are protected unless **Allow replacing existing
 action JSON and NPZ files** is enabled. Compilation reports unreachable short
 transitions from Pink as a visible UI error; increase that transition duration
 and compile again.
+
+## Local action player
+
+The Action Player tab accepts three local file contracts:
+
+- Action Recorder NPZ schema 1 or 2.
+- Kimodo G1-34 NPZ with `global_rot_mats` or `local_rot_mats`; enter the source
+  FPS when the archive does not contain it.
+- ARDY interactive-session PKL version 1.0 with a 34-joint G1 skeleton and
+  `local_rot_mats` or `joints_rot`.
+
+Imports are transient and are not copied into `data/`. Every format is
+normalized to the canonical 14 arm joints before playback. Source root, leg,
+and waist motion is discarded. The waist stays at the configured
+`base/concierge_init` values, while the lower-body state is left unchanged in
+its standing pose. Kimodo and ARDY actions receive one-second minimum-jerk entry
+and exit transitions between `concierge_init` and the imported arm motion.
+
+NPZ loading disables NumPy pickle support. ARDY requires pickle for its session
+format, so the loader uses a restricted NumPy-only unpickler and the UI still
+warns users to load only locally generated, trusted PKL files. Playback is
+kinematic MuJoCo/Viser visualization only; it does not publish robot commands.
+
+During Action Player playback, pause at any point to enable the exact-sample
+slider and previous/next frame controls. Selecting a sample immediately updates
+the shared MuJoCo/Viser pose. Enter a pose name, then save the selected row as a
+robot-left-arm or robot-right-arm pose. Resume continues from the selected
+sample. Saved pose notes include the source action, exact sample, and timestamp.

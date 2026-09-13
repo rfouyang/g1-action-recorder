@@ -266,6 +266,32 @@ class ActionService:
         normalized_name = PoseDefinition.validate_name(name)
         path = self._trajectory_path(name=normalized_name)
         arrays = self.archive_helper.read_npz(path=path)
+        return self.trajectory_from_arrays(
+            arrays=arrays,
+            expected_name=normalized_name,
+            source_label=str(path),
+        )
+
+    def load_trajectory_bytes(
+        self,
+        *,
+        content: bytes,
+        source_label: str = "uploaded trajectory archive",
+    ) -> ActionTrajectory:
+        """Load and validate native trajectory NPZ content held in memory."""
+        return self.trajectory_from_arrays(
+            arrays=self.archive_helper.read_npz_bytes(content=content),
+            source_label=source_label,
+        )
+
+    def trajectory_from_arrays(
+        self,
+        *,
+        arrays: dict[str, np.ndarray],
+        expected_name: str | None = None,
+        source_label: str = "trajectory archive",
+    ) -> ActionTrajectory:
+        """Build a validated native trajectory from already decoded NPZ arrays."""
         actual_names = set(arrays)
         if "schema_version" not in arrays:
             self._raise_invalid_trajectory_fields(actual_names, self.TRAJECTORY_ARRAY_NAMES)
@@ -316,9 +342,9 @@ class ActionService:
                 "max_tracking_error",
             ),
         )
-        if trajectory.action_name != normalized_name:
+        if expected_name is not None and trajectory.action_name != expected_name:
             raise ValueError(
-                f"Trajectory file {path} contains a different action name: "
+                f"Trajectory file {source_label} contains a different action name: "
                 f"{trajectory.action_name}"
             )
         self._validate_trajectory(trajectory)

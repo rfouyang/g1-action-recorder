@@ -27,6 +27,10 @@
     ></script>
     <script
       defer
+      src="{{ url_for('g1_3d_static', path='/js/panels/action_player.js') }}"
+    ></script>
+    <script
+      defer
       src="{{ url_for('g1_3d_static', path='/js/app.js') }}"
     ></script>
   </head>
@@ -38,6 +42,7 @@
         {% include "panels/pose_recorder.html" %}
         {% include "panels/pose_composer.html" %}
         {% include "panels/action.html" %}
+        {% include "panels/action_player.html" %}
       </aside>
 
       {% include "components/viewer.html" %}

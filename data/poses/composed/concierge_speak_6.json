@@ -1,0 +1,33 @@
+{
+  "schema_version": 1,
+  "name": "concierge_speak_6",
+  "pose_type": "composed",
+  "robot_model_id": "unitree_g1_29dof_rev_1_0_fake_hand",
+  "joint_values": {
+    "waist_yaw_joint": 0.0,
+    "waist_roll_joint": 0.0,
+    "waist_pitch_joint": 0.0,
+    "left_shoulder_pitch_joint": 0.10642638106546072,
+    "left_shoulder_roll_joint": 0.38434022668640516,
+    "left_shoulder_yaw_joint": -0.008059825197683874,
+    "left_elbow_joint": -0.5150019744522704,
+    "left_wrist_roll_joint": -0.7032228103508548,
+    "left_wrist_pitch_joint": -0.057985238810009186,
+    "left_wrist_yaw_joint": 0.3408262533170712,
+    "right_shoulder_pitch_joint": 0.04783701121893204,
+    "right_shoulder_roll_joint": -0.3468126813140151,
+    "right_shoulder_yaw_joint": 0.24222640209995286,
+    "right_elbow_joint": -0.44419138671760583,
+    "right_wrist_roll_joint": -0.001224730083973194,
+    "right_wrist_pitch_joint": 0.1420505386767886,
+    "right_wrist_yaw_joint": -0.001094743373770724
+  },
+  "source": "composition",
+  "created_at": "2026-09-13T06:08:24.006219Z",
+  "source_parts": {
+    "base": "concierge_init",
+    "left_arm": "concierge_speak_6",
+    "right_arm": "concierge_speak_6"
+  },
+  "notes": ""
+}

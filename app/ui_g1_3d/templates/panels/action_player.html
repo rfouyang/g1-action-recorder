@@ -1,0 +1,179 @@
+<section
+  id="panel-action-player"
+  class="hidden p-5"
+  role="tabpanel"
+  aria-labelledby="tab-action-player"
+  data-panel="action-player"
+  data-action-player-panel
+>
+  <p class="font-mono text-[0.65rem] uppercase tracking-[0.18em] text-base-content/50">04 · Playback</p>
+  <h1 class="mt-1 text-xl font-bold tracking-tight">Action Player</h1>
+  <p class="mt-2 text-sm leading-5 text-base-content/65">
+    Load a local motion file, normalize it to both G1 arms, and inspect it in the live Viser scene.
+  </p>
+
+  <div class="mt-4 grid grid-cols-3 border border-base-300" aria-label="Playback joint ownership">
+    <div class="border-r border-base-300 bg-success/10 px-2 py-2">
+      <p class="text-[0.65rem] text-base-content/55">Arms</p>
+      <p class="mt-0.5 text-xs font-semibold">Action · {{ action_player_arm_joint_count }}</p>
+    </div>
+    <div class="border-r border-base-300 bg-info/10 px-2 py-2">
+      <p class="text-[0.65rem] text-base-content/55">Waist</p>
+      <p class="mt-0.5 truncate text-xs font-semibold" title="base/{{ action_player_waist_pose }}">{{ action_player_waist_pose }}</p>
+    </div>
+    <div class="bg-warning/10 px-2 py-2">
+      <p class="text-[0.65rem] text-base-content/55">Lower body</p>
+      <p class="mt-0.5 text-xs font-semibold">Standing</p>
+    </div>
+  </div>
+
+  <div class="divider my-4"></div>
+
+  <fieldset class="fieldset">
+    <legend class="fieldset-legend">Action format</legend>
+    <select id="action-player-format" class="select select-sm w-full">
+      <option value="native_npz">Action Recorder NPZ</option>
+      <option value="kimodo_npz">Kimodo G1 NPZ</option>
+      <option value="ardy_pkl">ARDY session PKL</option>
+    </select>
+  </fieldset>
+
+  <fieldset class="fieldset mt-2">
+    <legend class="fieldset-legend">Action file</legend>
+    <input id="action-player-file" class="file-input file-input-sm w-full" type="file" accept=".npz">
+    <p id="action-player-file-help" class="label">Choose a compiled Action Recorder NPZ.</p>
+  </fieldset>
+
+  <div class="mt-2 grid grid-cols-1 gap-3 sm:grid-cols-2">
+    <fieldset class="fieldset">
+      <legend class="fieldset-legend">Display name</legend>
+      <input id="action-player-name" class="input input-sm w-full" type="text" maxlength="100" autocomplete="off" placeholder="Use file name">
+    </fieldset>
+    <fieldset class="fieldset">
+      <legend class="fieldset-legend">Source frequency · Hz</legend>
+      <input id="action-player-fps" class="input input-sm w-full" type="number" min="1" max="240" step="1" value="30" disabled>
+      <p class="label">Used when Kimodo does not embed FPS.</p>
+    </fieldset>
+  </div>
+
+  <div id="action-player-trust" class="alert alert-warning alert-soft mt-3 hidden py-2 text-xs" role="note">
+    Only load an ARDY PKL that you generated locally and trust.
+  </div>
+
+  <button id="action-player-load" class="btn btn-sm btn-neutral mt-3 w-full" type="button">
+    <span data-action-player-load-label>Load action</span>
+    <span data-action-player-load-spinner class="loading loading-spinner loading-xs hidden" aria-hidden="true"></span>
+  </button>
+
+  <div id="action-player-summary" class="card card-border card-sm mt-4 hidden bg-base-200">
+    <div class="card-body gap-2">
+      <div class="flex items-center justify-between gap-3">
+        <h2 id="action-player-summary-name" class="card-title min-w-0 truncate text-sm">No action loaded</h2>
+        <span id="action-player-summary-format" class="badge badge-outline badge-sm shrink-0">—</span>
+      </div>
+      <div class="overflow-x-auto">
+        <table class="table table-xs">
+          <tbody>
+            <tr><th>File</th><td id="action-player-summary-file" class="max-w-44 truncate text-right">—</td></tr>
+            <tr><th>Source joints</th><td id="action-player-summary-source-joints" class="text-right">—</td></tr>
+            <tr><th>Playable joints</th><td id="action-player-summary-arm-joints" class="text-right">—</td></tr>
+            <tr><th>Samples</th><td id="action-player-summary-samples" class="text-right">—</td></tr>
+            <tr><th>Frequency</th><td id="action-player-summary-fps" class="text-right">—</td></tr>
+            <tr><th>Duration</th><td id="action-player-summary-duration" class="text-right">—</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <ul id="action-player-warnings" class="space-y-1 text-xs text-warning"></ul>
+    </div>
+  </div>
+
+  <div class="mt-5 border-t border-base-300 pt-4">
+    <div class="flex items-center justify-between gap-3">
+      <div>
+        <h2 class="text-sm font-semibold">Viser playback</h2>
+        <p class="mt-0.5 text-xs text-base-content/55">Kinematic simulation only</p>
+      </div>
+      <span id="action-player-state" class="badge badge-ghost badge-sm">Idle</span>
+    </div>
+
+    <div class="join mt-3 flex w-full" aria-label="Uploaded action playback controls">
+      <button id="action-player-play" class="btn btn-sm btn-neutral join-item flex-1" type="button" disabled>Play</button>
+      <button id="action-player-pause" class="btn btn-sm join-item flex-1" type="button" disabled>Pause</button>
+      <button id="action-player-stop" class="btn btn-sm btn-error btn-outline join-item flex-1" type="button" disabled>Stop</button>
+    </div>
+
+    <div class="mt-3 flex items-center justify-between gap-3">
+      <label class="label cursor-pointer justify-start gap-2 text-xs">
+        <input id="action-player-loop" type="checkbox" class="toggle toggle-sm">
+        Loop playback
+      </label>
+      <span id="action-player-time" class="font-mono text-xs text-base-content/60">0.00 / 0.00 s</span>
+    </div>
+    <progress id="action-player-progress" class="progress progress-info mt-2 w-full" value="0" max="100"></progress>
+    <div class="mt-2 flex items-center justify-between gap-3 border border-base-300 bg-base-200 px-2 py-1.5">
+      <span id="action-player-phase" class="badge badge-ghost badge-xs">Waiting</span>
+      <span id="action-player-sample" class="font-mono text-[0.65rem] text-base-content/50">No action loaded</span>
+    </div>
+  </div>
+
+  <div class="mt-5 border-t border-base-300 pt-4">
+    <div class="flex items-center justify-between gap-3">
+      <div>
+        <h2 class="text-sm font-semibold">Paused frame capture</h2>
+        <p class="mt-0.5 text-xs text-base-content/55">Pause, select one exact sample, then save either arm.</p>
+      </div>
+      <span id="action-player-capture-state" class="badge badge-ghost badge-sm">Pause to select</span>
+    </div>
+
+    <fieldset class="fieldset mt-3">
+      <legend class="fieldset-legend">Trajectory sample</legend>
+      <input
+        id="action-player-frame"
+        class="range range-neutral range-xs w-full"
+        type="range"
+        min="0"
+        max="0"
+        step="1"
+        value="0"
+        aria-label="Selected trajectory sample"
+        disabled
+      >
+      <div class="flex items-center justify-between gap-3 text-[0.65rem] text-base-content/55">
+        <span id="action-player-frame-position" class="font-mono">Sample 0 / 0</span>
+        <span id="action-player-frame-time" class="font-mono">0.000 s</span>
+      </div>
+    </fieldset>
+
+    <div class="join mt-1 flex w-full" aria-label="Exact frame controls">
+      <button id="action-player-frame-previous" class="btn btn-sm join-item flex-1" type="button" disabled>Previous frame</button>
+      <button id="action-player-frame-next" class="btn btn-sm join-item flex-1" type="button" disabled>Next frame</button>
+    </div>
+
+    <div class="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2">
+      <fieldset class="fieldset">
+        <legend class="fieldset-legend">Pose name</legend>
+        <input id="action-player-pose-name" class="input input-sm w-full" type="text" maxlength="100" autocomplete="off" placeholder="selected_gesture">
+      </fieldset>
+      <fieldset class="fieldset">
+        <legend class="fieldset-legend">Notes</legend>
+        <input id="action-player-pose-notes" class="input input-sm w-full" type="text" autocomplete="off" placeholder="Optional">
+      </fieldset>
+    </div>
+
+    <label class="label mt-2 cursor-pointer justify-start gap-2 text-xs">
+      <input id="action-player-pose-overwrite" type="checkbox" class="checkbox checkbox-xs">
+      Allow replacing an existing pose with the same name
+    </label>
+
+    <div class="mt-3 grid grid-cols-2 gap-2">
+      <button id="action-player-save-left" class="btn btn-sm btn-secondary" type="button" disabled>Save left arm</button>
+      <button id="action-player-save-right" class="btn btn-sm btn-accent" type="button" disabled>Save right arm</button>
+    </div>
+  </div>
+
+  <div id="action-player-status" class="alert alert-info mt-4 py-2 text-xs" role="status">
+    Choose an action format and load a local file.
+  </div>
+  <div id="action-player-success" class="alert alert-success mt-3 hidden py-2 text-xs" role="status"></div>
+  <div id="action-player-error" class="alert alert-error mt-3 hidden py-2 text-xs" role="alert"></div>
+</section>

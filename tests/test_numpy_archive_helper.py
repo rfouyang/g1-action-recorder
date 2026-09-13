@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import io
 import tempfile
 import unittest
 from pathlib import Path
@@ -65,6 +66,17 @@ class NumpyArchiveHelperTest(unittest.TestCase):
                 path=self.directory / "unsafe.npz",
                 arrays={"payload": np.asarray([{"unsafe": True}], dtype=object)},
             )
+
+    def test_uploaded_archive_rejects_npy_and_pickle_arrays(self) -> None:
+        npy_output = io.BytesIO()
+        np.save(npy_output, np.zeros(2))
+        with self.assertRaisesRegex(ValueError, "NPZ archive"):
+            self.helper.read_npz_bytes(content=npy_output.getvalue())
+
+        object_output = io.BytesIO()
+        np.savez(object_output, payload=np.asarray([{"unsafe": True}], dtype=object))
+        with self.assertRaisesRegex(ValueError, "Object arrays cannot be loaded"):
+            self.helper.read_npz_bytes(content=object_output.getvalue())
 
 
 def demo_test_numpy_archive_helper() -> None:

@@ -58,7 +58,7 @@ async def ui_action_playback_websocket(websocket: WebSocket) -> None:
     sent_revision = -1
     try:
         while True:
-            snapshot = application.action_playback.snapshot()
+            snapshot = application.action_player.snapshot()
             if snapshot.revision != sent_revision:
                 await websocket.send_json(_playback_message(snapshot))
                 sent_revision = snapshot.revision
@@ -95,11 +95,14 @@ def _snapshot_message(snapshot: SimulationSnapshot) -> dict[str, object]:
     }
 
 
-def _playback_message(snapshot: ActionPlaybackSnapshot) -> dict[str, object]:
+def _playback_message(
+    snapshot: ActionPlaybackSnapshot,
+) -> dict[str, object]:
     return {
         "type": "action_playback",
         "revision": snapshot.revision,
         "state": snapshot.state.value,
+        "source": snapshot.source.value if snapshot.source is not None else None,
         "action_name": snapshot.action_name,
         "sample_index": snapshot.sample_index,
         "sample_count": snapshot.sample_count,

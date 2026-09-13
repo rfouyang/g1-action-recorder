@@ -80,9 +80,11 @@ class G1JointSchema:
         "right_wrist_pitch_joint",
         "right_wrist_yaw_joint",
     )
+    LEG_JOINT_NAMES = DDS_JOINT_NAMES[:12]
     WAIST_JOINT_NAMES = DDS_JOINT_NAMES[12:15]
     LEFT_ARM_JOINT_NAMES = DDS_JOINT_NAMES[15:22]
     RIGHT_ARM_JOINT_NAMES = DDS_JOINT_NAMES[22:29]
+    ARM_JOINT_NAMES = LEFT_ARM_JOINT_NAMES + RIGHT_ARM_JOINT_NAMES
     BASE_JOINT_NAMES = WAIST_JOINT_NAMES + LEFT_ARM_JOINT_NAMES + RIGHT_ARM_JOINT_NAMES
 
     def __init__(self, *, asset_helper: G1AssetHelper) -> None:

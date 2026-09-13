@@ -1,4 +1,4 @@
-class ActionPanel {
+class ActionComposerPanel {
   constructor(root = document) {
     this.panel = root.querySelector("[data-action-panel]");
     this.saved = root.querySelector("#action-saved");
@@ -35,6 +35,7 @@ class ActionPanel {
     this.error = root.querySelector("#action-error");
     this.frames = [];
     this.playbackState = "idle";
+    this.playbackSource = null;
     this.playbackSocket = null;
     this.playbackReconnectTimer = null;
   }
@@ -333,6 +334,9 @@ class ActionPanel {
   }
 
   async setLoop() {
+    if (this.playbackSource !== "compiled") {
+      return;
+    }
     await this.sendPlaybackCommand("loop", { enabled: this.loop.checked });
   }
 
@@ -353,7 +357,10 @@ class ActionPanel {
 
   updatePlayback(playback) {
     this.playbackState = playback.state;
+    this.playbackSource = playback.source || null;
     if (
+      playback.source === "compiled"
+      &&
       playback.action_name
       && [...this.playbackTrajectory.options].some(
         (option) => option.value === playback.action_name,
@@ -386,11 +393,14 @@ class ActionPanel {
 
   updatePlaybackControls() {
     const hasTrajectory = Boolean(this.playbackTrajectory.value);
-    const active = this.playbackState === "playing" || this.playbackState === "paused";
-    this.playButton.disabled = !hasTrajectory;
-    this.pauseButton.disabled = !active;
+    const running = this.playbackState === "playing" || this.playbackState === "paused";
+    const compiledSelected = this.playbackSource === "compiled";
+    this.playButton.disabled = !hasTrajectory || (running && !compiledSelected);
+    this.pauseButton.disabled = !running || !compiledSelected;
     this.pauseButton.textContent = this.playbackState === "paused" ? "Resume" : "Pause";
-    this.stopButton.disabled = !active && this.playbackState !== "completed";
+    this.stopButton.disabled = !compiledSelected || (
+      !running && this.playbackState !== "completed"
+    );
   }
 
   updatePlaybackPhase(playback) {
@@ -539,4 +549,4 @@ class ActionPanel {
   }
 }
 
-window.ActionPanel = ActionPanel;
+window.ActionComposerPanel = ActionComposerPanel;

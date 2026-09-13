@@ -8,7 +8,8 @@ import unittest
 import numpy as np
 
 from component.action_playback_service import (
-    ActionPlaybackService,
+    ActionPlayback,
+    ActionPlaybackSource,
     ActionPlaybackState,
 )
 from component.common.action_models import ActionTrajectory
@@ -19,7 +20,7 @@ from util.g1_asset_helper import G1AssetHelper
 from util.mujoco_pose_helper import MujocoPoseHelper
 
 
-class ActionPlaybackServiceTest(unittest.TestCase):
+class ActionPlaybackTest(unittest.TestCase):
     @classmethod
     def setUpClass(cls) -> None:
         settings = AppSettings()
@@ -32,7 +33,7 @@ class ActionPlaybackServiceTest(unittest.TestCase):
             schema=self.schema,
             pose_helper=self.pose_helper,
         )
-        self.playback = ActionPlaybackService(simulation=self.simulation)
+        self.playback = ActionPlayback(simulation=self.simulation)
 
     def tearDown(self) -> None:
         self.playback.close()
@@ -40,10 +41,12 @@ class ActionPlaybackServiceTest(unittest.TestCase):
     def test_playback_reaches_every_sample_and_completes(self) -> None:
         trajectory = self._trajectory(step_seconds=0.04)
 
-        started = self.playback.play(trajectory=trajectory)
+        self._load(trajectory)
+        started = self.playback.play()
         completed = self._wait_for_state(ActionPlaybackState.COMPLETED)
 
         self.assertEqual(started.state, ActionPlaybackState.PLAYING)
+        self.assertEqual(started.source, ActionPlaybackSource.UPLOADED)
         self.assertEqual(started.phase.value, "keyframe")
         self.assertEqual(started.target_pose_name, "concierge_init")
         self.assertEqual(completed.sample_index, trajectory.sample_count - 1)
@@ -57,7 +60,8 @@ class ActionPlaybackServiceTest(unittest.TestCase):
 
     def test_pause_holds_current_sample_until_resume(self) -> None:
         trajectory = self._trajectory(step_seconds=0.15)
-        self.playback.play(trajectory=trajectory)
+        self._load(trajectory)
+        self.playback.play()
         moving = self._wait_for_sample(1)
 
         paused = self.playback.pause()
@@ -76,9 +80,43 @@ class ActionPlaybackServiceTest(unittest.TestCase):
             ActionPlaybackState.COMPLETED,
         )
 
+    def test_paused_seek_previews_exact_sample_and_resume_continues_from_it(self) -> None:
+        trajectory = self._trajectory(step_seconds=0.12)
+        self._load(trajectory)
+        self.playback.play()
+        self.playback.pause()
+
+        selected = self.playback.seek(sample_index=2)
+        positions = self.simulation.snapshot().joint_position_map()
+
+        self.assertEqual(selected.state, ActionPlaybackState.PAUSED)
+        self.assertEqual(selected.sample_index, 2)
+        self.assertEqual(selected.elapsed_seconds, trajectory.timestamps[2])
+        self.assertEqual(
+            self.playback.paused_sample_index(),
+            2,
+        )
+        self.assertAlmostEqual(positions["left_elbow_joint"], 0.5)
+
+        self.playback.resume()
+        completed = self._wait_for_state(ActionPlaybackState.COMPLETED)
+        self.assertEqual(completed.sample_index, trajectory.sample_count - 1)
+
+    def test_seek_requires_paused_trajectory_and_valid_sample(self) -> None:
+        trajectory = self._trajectory(step_seconds=0.12)
+        self._load(trajectory)
+        self.playback.play()
+        with self.assertRaisesRegex(ValueError, "Pause action playback"):
+            self.playback.seek(sample_index=1)
+
+        self.playback.pause()
+        with self.assertRaisesRegex(ValueError, "within"):
+            self.playback.seek(sample_index=trajectory.sample_count)
+
     def test_stop_returns_to_first_sample(self) -> None:
         trajectory = self._trajectory(step_seconds=0.08)
-        self.playback.play(trajectory=trajectory)
+        self._load(trajectory)
+        self.playback.play()
         self._wait_for_sample(1)
 
         stopped = self.playback.stop()
@@ -93,7 +131,8 @@ class ActionPlaybackServiceTest(unittest.TestCase):
 
     def test_hold_samples_report_the_reached_keyframe(self) -> None:
         trajectory = self._trajectory(step_seconds=0.05, hold_seconds=0.1)
-        self.playback.play(trajectory=trajectory)
+        self._load(trajectory)
+        self.playback.play()
 
         holding = self._wait_for_sample(3)
 
@@ -105,7 +144,8 @@ class ActionPlaybackServiceTest(unittest.TestCase):
     def test_loop_remains_active_until_stopped(self) -> None:
         trajectory = self._trajectory(step_seconds=0.03)
 
-        self.playback.play(trajectory=trajectory, loop=True)
+        self._load(trajectory)
+        self.playback.play(loop=True)
         time.sleep(0.16)
         looping = self.playback.snapshot()
 
@@ -113,6 +153,48 @@ class ActionPlaybackServiceTest(unittest.TestCase):
         self.assertTrue(looping.loop)
         self.assertGreater(looping.revision, 4)
         self.assertEqual(self.playback.stop().state, ActionPlaybackState.STOPPED)
+
+    def test_playback_locks_waist_and_restores_standing_legs(self) -> None:
+        self.playback.close()
+        locked_values = {
+            name: 0.0
+            for name in self.schema.LEG_JOINT_NAMES + self.schema.WAIST_JOINT_NAMES
+        }
+        locked_values["waist_yaw_joint"] = 0.2
+        self.playback = ActionPlayback(
+            simulation=self.simulation,
+            locked_joint_positions=locked_values,
+        )
+        self.simulation.update_joint_positions({"left_hip_pitch_joint": 0.15})
+        source = self._trajectory(step_seconds=0.04)
+        joint_positions = source.joint_positions.copy()
+        joint_positions[:, source.joint_names.index("waist_yaw_joint")] = 0.6
+        trajectory = ActionTrajectory(
+            action_name=source.action_name,
+            robot_model_id=source.robot_model_id,
+            joint_names=source.joint_names,
+            timestamps=source.timestamps,
+            joint_positions=joint_positions,
+            keyframe_sample_indices=source.keyframe_sample_indices,
+            source_pose_names=source.source_pose_names,
+            keyframe_hold_seconds=source.keyframe_hold_seconds,
+            requested_sample_frequency_hz=source.requested_sample_frequency_hz,
+            max_tracking_error=source.max_tracking_error,
+        )
+
+        self._load(trajectory)
+        self.playback.play()
+        self._wait_for_state(ActionPlaybackState.COMPLETED)
+        positions = self.simulation.snapshot().joint_position_map()
+
+        self.assertAlmostEqual(positions["waist_yaw_joint"], 0.2)
+        self.assertAlmostEqual(positions["left_hip_pitch_joint"], 0.0)
+
+    def _load(self, trajectory: ActionTrajectory) -> None:
+        self.playback.load(
+            trajectory=trajectory,
+            source=ActionPlaybackSource.UPLOADED,
+        )
 
     def _trajectory(
         self,

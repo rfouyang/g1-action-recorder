@@ -7,7 +7,8 @@ Last updated: 2026-09-13
 `g1-action-recorder` currently provides a simulation-only authoring workflow for
 Unitree G1 upper-body poses and pose-based robot actions. Pose recording,
 pose composition, arm mirroring, time-sampled action generation, NPZ
-persistence, and five-camera MuJoCo validation are implemented.
+persistence, three-format local action import, arm-only Viser playback, and
+five-camera MuJoCo validation are implemented.
 
 No physical robot commands are sent. Unitree SDK2/DDS integration and real G1
 action execution have not been implemented.
@@ -28,9 +29,14 @@ app -> component -> util
   mirroring, and preview orchestration.
 - `component/action_service.py`: action definitions, Pink trajectory generation,
   NPZ persistence, and MuJoCo action preview orchestration.
+- `component/action_player_service.py`: the single public playback capability;
+  it selects compiled trajectories, imports native NPZ, Kimodo NPZ, and ARDY
+  PKL files, normalizes them to both arms, and owns playback controls.
+- `component/action_playback_service.py`: internal timed state machine used only
+  by `ActionPlayerService`; it is not exposed by `RobotApplication`.
 - `component/common/`: immutable pose/action models and the canonical G1 joint
   schema.
-- `util/`: JSON/NPZ file helpers and MuJoCo/Pink adapters.
+- `util/`: JSON/NPZ file helpers plus MuJoCo, Pink, Kimodo, and ARDY adapters.
 - `asset/g1/`: pinned G1 URDF, MJCF, meshes, metadata, and DDS joint mapping.
 - `data/`: saved pose/action definitions and generated preview output.
 - `tests/`: `unittest` coverage for models, services, helpers, UI routes,
@@ -187,7 +193,7 @@ Each transition has two timing values:
 Action JSON uses schema version 1. `hold_seconds` is included in newly saved
 definitions; older definitions without it load with a zero hold.
 
-### Action tab
+### Action Composer tab
 
 - Adds any number of intermediate complete poses in order.
 - Sets incoming travel time and hold time for every intermediate pose.
@@ -202,6 +208,36 @@ definitions; older definitions without it load with a zero hold.
 - Protects existing JSON and NPZ files unless overwrite is enabled.
 - Reports invalid names, missing poses, unreachable short transitions, and
   overwrite conflicts as visible UI errors.
+
+### Action Player tab
+
+- Uploads an Action Recorder NPZ, Kimodo G1 NPZ, or ARDY session PKL without
+  persisting the uploaded file.
+- Reuses the native NPZ schema validator for Action Recorder archives.
+- Converts Kimodo and ARDY 34-joint rotations to the canonical 14 G1 arm hinge
+  positions using the pinned MJCF hierarchy, axes, and rest transforms.
+- Adds one-second minimum-jerk entry and exit transitions for Kimodo and ARDY so
+  both arms start and finish at `base/concierge_init`.
+- Explicitly assigns both arms to the action, locks the waist to
+  `base/concierge_init`, and restores all lower-body joints to the configured
+  standing values on every playback sample.
+- Plays the normalized action through the shared MuJoCo/Viser action player
+  with pause, resume, stop, loop, progress, and phase feedback.
+- While paused, selects any exact trajectory sample with a slider or one-frame
+  step controls and updates MuJoCo/Viser immediately.
+- Saves either arm from the selected sample as a standard `left_arm` or
+  `right_arm` pose, with normal overwrite protection and source frame metadata
+  in the notes. Resume continues from the selected sample.
+
+Kimodo archives must contain `global_rot_mats` or `local_rot_mats`. If no scalar
+FPS field is present, the user supplies the source frequency in the panel. ARDY
+imports require session version 1.0, `model_fps`, a 34-joint skeleton, and
+`motion.local_rot_mats` or `motion.joints_rot`.
+
+NPZ files are loaded with `allow_pickle=False`. ARDY PKL files pass through a
+restricted unpickler that permits only the NumPy array reconstruction globals
+needed by the session format. Because pickle remains a risky container, the UI
+also instructs users to load only locally generated, trusted ARDY files.
 
 ## Trajectory generation
 
@@ -259,13 +295,22 @@ JSON, and trajectory NPZ files are not globally ignored.
 
 ## Validation status
 
-The latest verification completed successfully on 2026-09-13:
+The repository baseline recorded 101 passing unit tests before the Action
+Player work. The latest focused verification completed successfully on
+2026-09-13:
 
 - Ruff: passed.
-- Unit tests: 101 passed after removal of the legacy Gradio UI tests.
-- `uv lock --check`: passed.
-- EGL MuJoCo rendering: passed.
-- NPZ schema-1 backward-compatibility test: passed.
+- Refactor-focused action, simulation, schema, archive, and application tests:
+  38 passed under EGL.
+- Kimodo conversion matched Kimodo's G1 MuJoCo converter within approximately
+  `1.1e-7` radians on the bundled 150-frame sample.
+- CSS production build: passed.
+- JavaScript syntax checks and `uv lock --check`: passed.
+
+The Starlette `TestClient` UI test process currently stalls during Viser
+lifespan startup in this environment. The affected `TestClient` route tests are
+therefore not counted as passing in this update. No browser provider was
+available for visual inspection.
 
 ## Known limitations and next work
 
@@ -277,13 +322,15 @@ The latest verification completed successfully on 2026-09-13:
   not been verified against the user's physical G1.
 - Pink and MuJoCo currently use a fixed-base model for upper-body action
   authoring. Balance and whole-body dynamics are not validated.
+- Action Player imports are held in application memory and are replaced by the
+  next upload; there is no imported-motion library or persistence workflow.
 - MuJoCo action GIF rendering remains an offline validation capability, while
   Viser playback is an interactive kinematic player rather than physics or
   hardware execution. The five-camera GIF will not be added to the web UI;
   interactive visualization uses the six Viser camera presets.
-- The Action panel supports append, individual removal, and clear. Arbitrary
-  insertion, drag reordering, and editing an existing intermediate row in place
-  are not yet implemented.
+- The Action Composer panel supports append, individual removal, and clear.
+  Arbitrary insertion, drag reordering, and editing an existing intermediate
+  row in place are not yet implemented.
 - Navigation, TTS, concierge dialogue, gesture execution, and the full robot
   application remain future phases.
 

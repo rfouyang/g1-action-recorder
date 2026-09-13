@@ -122,6 +122,7 @@ window.addEventListener("DOMContentLoaded", () => {
   new WorkspaceTabs().start();
   new window.PoseRecorderPanel().start();
   new window.PoseComposerPanel().start();
-  new window.ActionPanel().start();
+  new window.ActionComposerPanel().start();
+  new window.ActionPlayerPanel().start();
   new ViserViewer().start();
 });
