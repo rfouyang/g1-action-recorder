@@ -1,0 +1,36 @@
+@import "tailwindcss";
+@source "../../templates/**/*.html";
+@source "../js/**/*.js";
+
+@plugin "daisyui" {
+  themes: wireframe --default, dark;
+  logs: false;
+}
+
+@plugin "daisyui/theme" {
+  name: "wireframe";
+  default: true;
+  --color-neutral: #475569;
+  --color-neutral-content: #f8fafc;
+  --color-secondary: #2563eb;
+  --color-secondary-content: #eff6ff;
+  --color-accent: #ea580c;
+  --color-accent-content: #fff7ed;
+}
+
+@layer base {
+  button,
+  select {
+    touch-action: manipulation;
+  }
+}
+
+@layer components {
+  .viewer-grid {
+    background-color: oklch(18% 0.012 255);
+    background-image:
+      linear-gradient(oklch(100% 0 0 / 0.035) 1px, transparent 1px),
+      linear-gradient(90deg, oklch(100% 0 0 / 0.035) 1px, transparent 1px);
+    background-size: 32px 32px;
+  }
+}

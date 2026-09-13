@@ -1,0 +1,39 @@
+<section data-theme="dark" class="hidden min-h-0 flex-col bg-neutral text-neutral-content lg:flex" aria-label="Robot 3D viewer">
+  <div class="flex h-11 shrink-0 items-center justify-between border-b border-neutral-content/15 px-4">
+    <div class="flex items-center gap-2">
+      <span id="viser-status" class="status status-warning" aria-label="Viser connection pending"></span>
+      <span id="viser-status-label" class="font-mono text-xs uppercase tracking-[0.16em]">Connecting 3D scene</span>
+    </div>
+    <div class="flex items-center gap-4 font-mono text-[0.65rem] uppercase tracking-wider text-neutral-content/55">
+      <span>{{ model_id }}</span>
+      <span>MuJoCo source</span>
+    </div>
+  </div>
+
+  <div id="viser-viewport" class="viewer-grid relative min-h-0 flex-1 overflow-hidden">
+    <iframe
+      id="viser-frame"
+      class="absolute inset-0 size-full border-0 bg-neutral"
+      title="Interactive G1 robot scene"
+      data-viser-port="{{ viser_port }}"
+      allow="fullscreen"
+    ></iframe>
+
+    <div class="absolute bottom-4 left-1/2 w-[calc(100%-2rem)] max-w-3xl -translate-x-1/2 border border-neutral-content/15 bg-neutral/90 p-2 shadow-xl backdrop-blur">
+      <div class="mb-2 flex items-center justify-between px-1">
+        <span class="font-mono text-[0.65rem] uppercase tracking-[0.16em] text-neutral-content/55">
+          Robot-relative camera
+        </span>
+        <span class="badge badge-xs badge-ghost">Mouse: orbit · pan · zoom</span>
+      </div>
+      <div class="grid grid-cols-3 gap-1 sm:grid-cols-6" aria-label="Fixed camera views">
+        <button class="btn btn-xs btn-active bg-neutral-content text-neutral" type="button" aria-pressed="true" data-camera-view="front">Front</button>
+        <button class="btn btn-xs btn-ghost text-neutral-content/70" type="button" aria-pressed="false" data-camera-view="back">Back</button>
+        <button class="btn btn-xs btn-ghost text-neutral-content/70" type="button" aria-pressed="false" data-camera-view="left">Left</button>
+        <button class="btn btn-xs btn-ghost text-neutral-content/70" type="button" aria-pressed="false" data-camera-view="right">Right</button>
+        <button class="btn btn-xs btn-ghost text-neutral-content/70" type="button" aria-pressed="false" data-camera-view="front_left_45">Front-left 45°</button>
+        <button class="btn btn-xs btn-ghost text-neutral-content/70" type="button" aria-pressed="false" data-camera-view="front_right_45">Front-right 45°</button>
+      </div>
+    </div>
+  </div>
+</section>

@@ -1,0 +1,168 @@
+<section
+  id="panel-pose-recorder"
+  class="p-5"
+  role="tabpanel"
+  aria-labelledby="tab-pose-recorder"
+  data-panel="pose-recorder"
+  data-pose-recorder
+  data-initial-revision="{{ initial_revision }}"
+>
+  <div class="flex items-start justify-between gap-3">
+    <div>
+      <p class="font-mono text-[0.65rem] uppercase tracking-[0.18em] text-base-content/50">01 · Capture</p>
+      <h1 class="mt-1 text-xl font-bold tracking-tight">Pose Recorder</h1>
+    </div>
+    <div class="flex items-center gap-2">
+      <span id="simulation-status" class="status status-warning status-sm" aria-label="Simulation connection pending"></span>
+      <span id="simulation-status-label" class="font-mono text-[0.65rem] text-base-content/55">Connecting</span>
+    </div>
+  </div>
+  <p class="mt-2 text-sm leading-5 text-base-content/65">
+    Adjust a simulated posture and inspect the state reported back by MuJoCo.
+    Left and right always mean the robot's own sides.
+  </p>
+
+  <div class="divider my-4"></div>
+
+  <fieldset class="fieldset">
+    <legend class="fieldset-legend">Source</legend>
+    <div class="join w-full">
+      <button class="btn btn-sm join-item flex-1" type="button">MuJoCo</button>
+      <button class="btn btn-sm btn-ghost join-item flex-1" type="button" disabled>Robot</button>
+    </div>
+  </fieldset>
+
+  <fieldset class="fieldset mt-3">
+    <legend class="fieldset-legend">Pose group</legend>
+    <select id="pose-group" class="select select-sm w-full" aria-label="Pose group">
+      <option value="base">Base · complete upper body</option>
+      <option value="left_arm">Robot-left arm</option>
+      <option value="right_arm">Robot-right arm</option>
+    </select>
+    <div class="mt-2 flex flex-wrap gap-1.5" aria-label="Joint group color key">
+      <span class="badge badge-neutral badge-sm">Waist</span>
+      <span class="badge badge-secondary badge-sm">Robot-left arm</span>
+      <span class="badge badge-accent badge-sm">Robot-right arm</span>
+    </div>
+  </fieldset>
+
+  <div class="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2">
+    <fieldset class="fieldset">
+      <legend class="fieldset-legend">Pose name</legend>
+      <input
+        id="pose-name"
+        class="input input-sm w-full"
+        type="text"
+        maxlength="100"
+        value="{{ default_pose_name }}"
+        autocomplete="off"
+      >
+    </fieldset>
+    <fieldset class="fieldset">
+      <legend class="fieldset-legend">Notes</legend>
+      <input
+        id="pose-notes"
+        class="input input-sm w-full"
+        type="text"
+        value="{{ default_pose_notes }}"
+        autocomplete="off"
+        placeholder="Optional"
+      >
+    </fieldset>
+  </div>
+
+  <label class="label mt-2 cursor-pointer justify-start gap-2 text-xs">
+    <input id="pose-overwrite" type="checkbox" class="checkbox checkbox-xs">
+    Allow replacing an existing pose with the same name
+  </label>
+
+  <div class="mt-3 grid grid-cols-2 gap-2">
+    <button id="reset-pose" class="btn btn-sm btn-ghost" type="button">Reset group</button>
+    <button id="save-pose" class="btn btn-sm btn-neutral" type="button">
+      <span data-save-label>Save pose</span>
+      <span data-save-loading class="loading loading-spinner loading-xs hidden" aria-hidden="true"></span>
+    </button>
+  </div>
+
+  <div id="simulation-success" class="alert alert-success mt-3 hidden py-2 text-xs" role="status"></div>
+  <div id="simulation-error" class="alert alert-error mt-3 hidden py-2 text-xs" role="alert"></div>
+
+  <div class="mt-5 border-y border-base-300 py-3">
+    <div class="mb-2 flex items-center justify-between">
+      <h2 class="text-sm font-semibold">Joint inspector</h2>
+      <span id="visible-joint-count" class="badge badge-ghost badge-sm">{{ editable_joint_count }} joints</span>
+    </div>
+    <div class="max-h-[calc(100vh-25rem)] min-h-64 overflow-y-auto border border-base-300">
+      <table class="table table-xs table-pin-rows">
+        <thead>
+          <tr>
+            <th class="w-28">Joint</th>
+            <th>Target</th>
+            <th class="w-16 text-right">Actual</th>
+            <th class="w-10"><span class="sr-only">Reset</span></th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for joint in joint_rows %}
+          <tr
+            class="{% if joint.group == 'left_arm' %}bg-secondary/10{% elif joint.group == 'right_arm' %}bg-accent/10{% else %}bg-neutral/10{% endif %}"
+            data-joint-row
+            data-joint-group="{{ joint.group }}"
+          >
+            <th class="border-l-4 {% if joint.group == 'left_arm' %}border-secondary{% elif joint.group == 'right_arm' %}border-accent{% else %}border-neutral{% endif %}">
+              <span class="block leading-4">{{ joint.label }}</span>
+              <span class="badge badge-xs mt-0.5 {% if joint.group == 'left_arm' %}badge-secondary{% elif joint.group == 'right_arm' %}badge-accent{% else %}badge-neutral{% endif %}">
+                {% if joint.group == "left_arm" %}robot-left{% elif joint.group == "right_arm" %}robot-right{% else %}waist{% endif %}
+              </span>
+            </th>
+            <td>
+              <div class="flex min-w-44 items-center gap-2">
+                <input
+                  class="range range-xs min-w-24 flex-1 {% if joint.group == 'left_arm' %}range-secondary{% elif joint.group == 'right_arm' %}range-accent{% else %}range-neutral{% endif %}"
+                  type="range"
+                  min="{{ '%.6f'|format(joint.lower_limit) }}"
+                  max="{{ '%.6f'|format(joint.upper_limit) }}"
+                  step="0.001"
+                  value="{{ '%.6f'|format(joint.target) }}"
+                  aria-label="{{ joint.label }} target"
+                  data-joint-target
+                  data-joint-name="{{ joint.name }}"
+                >
+                <input
+                  class="input input-xs w-20 font-mono text-right"
+                  type="number"
+                  min="{{ '%.6f'|format(joint.lower_limit) }}"
+                  max="{{ '%.6f'|format(joint.upper_limit) }}"
+                  step="0.001"
+                  value="{{ '%.3f'|format(joint.target) }}"
+                  aria-label="{{ joint.label }} target value"
+                  data-joint-target-number
+                  data-joint-name="{{ joint.name }}"
+                >
+              </div>
+            </td>
+            <td class="text-right font-mono tabular-nums" data-joint-actual="{{ joint.name }}">
+              {{ '%.3f'|format(joint.actual) }}
+            </td>
+            <td class="text-right">
+              <div class="tooltip tooltip-left" data-tip="Reset to {{ default_pose_name }}: {{ '%.3f'|format(joint.reset_value) }} rad">
+                <button
+                  class="btn btn-square btn-ghost btn-xs {% if joint.group == 'left_arm' %}text-secondary{% elif joint.group == 'right_arm' %}text-accent{% else %}text-neutral{% endif %}"
+                  type="button"
+                  aria-label="Reset {{ joint.label }} to {{ default_pose_name }}"
+                  data-joint-reset
+                  data-joint-name="{{ joint.name }}"
+                  data-reset-value="{{ '%.6f'|format(joint.reset_value) }}"
+                >↺</button>
+              </div>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    <p class="mt-2 text-[0.65rem] leading-4 text-base-content/55">
+      Values are radians. Target is your command; Actual is the latest MuJoCo state.
+    </p>
+  </div>
+</section>

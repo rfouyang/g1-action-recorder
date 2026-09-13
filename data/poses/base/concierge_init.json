@@ -1,0 +1,29 @@
+{
+  "schema_version": 1,
+  "name": "concierge_init",
+  "pose_type": "base",
+  "robot_model_id": "unitree_g1_29dof_rev_1_0_fake_hand",
+  "joint_values": {
+    "waist_yaw_joint": 0.0,
+    "waist_roll_joint": 0.0,
+    "waist_pitch_joint": 0.0,
+    "left_shoulder_pitch_joint": 0.0,
+    "left_shoulder_roll_joint": 0.18,
+    "left_shoulder_yaw_joint": 0.0,
+    "left_elbow_joint": 1.4,
+    "left_wrist_roll_joint": 0.0,
+    "left_wrist_pitch_joint": 0.0,
+    "left_wrist_yaw_joint": 0.0,
+    "right_shoulder_pitch_joint": 0.0,
+    "right_shoulder_roll_joint": -0.18,
+    "right_shoulder_yaw_joint": 0.0,
+    "right_elbow_joint": 1.4,
+    "right_wrist_roll_joint": 0.0,
+    "right_wrist_pitch_joint": 0.0,
+    "right_wrist_yaw_joint": 0.0
+  },
+  "source": "simulation",
+  "created_at": "2026-09-12T09:28:06.463117Z",
+  "source_parts": {},
+  "notes": ""
+}

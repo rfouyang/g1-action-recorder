@@ -1,0 +1,76 @@
+<header class="navbar h-16 min-h-16 border-b border-base-300 bg-base-100 px-3 shadow-sm">
+  <div class="navbar-start min-w-52 gap-3">
+    <div class="grid size-9 place-items-center border border-base-content bg-base-content text-sm font-black tracking-tight text-base-100">
+      G1
+    </div>
+    <div class="leading-none">
+      <p class="text-sm font-bold tracking-[0.08em]">ACTION RECORDER</p>
+      <p class="mt-1 font-mono text-[0.65rem] uppercase tracking-[0.2em] text-base-content/55">
+        Motion studio
+      </p>
+    </div>
+  </div>
+
+  <nav class="navbar-center hidden h-full lg:flex" aria-label="Motion workspaces">
+    <div class="tabs tabs-border h-full" role="tablist" aria-label="Motion workspaces">
+      <button
+        id="tab-pose-recorder"
+        class="tab h-full tab-active"
+        type="button"
+        role="tab"
+        aria-selected="true"
+        aria-controls="panel-pose-recorder"
+        data-panel-target="pose-recorder"
+      >
+        Pose Recorder
+      </button>
+      <button
+        id="tab-pose-composer"
+        class="tab h-full"
+        type="button"
+        role="tab"
+        aria-selected="false"
+        aria-controls="panel-pose-composer"
+        data-panel-target="pose-composer"
+      >
+        Pose Composer
+      </button>
+      <button
+        id="tab-action"
+        class="tab h-full"
+        type="button"
+        role="tab"
+        aria-selected="false"
+        aria-controls="panel-action"
+        data-panel-target="action"
+      >
+        Action
+      </button>
+    </div>
+  </nav>
+
+  <div class="navbar-end min-w-52 gap-3">
+    <div class="hidden text-right sm:block">
+      <p class="font-mono text-[0.65rem] uppercase tracking-wider text-base-content/50">
+        Runtime
+      </p>
+      <p class="text-xs font-semibold">Simulation</p>
+    </div>
+    <span class="status status-success" aria-label="Application ready"></span>
+    <span class="badge badge-sm badge-warning">LOCAL</span>
+  </div>
+</header>
+
+<nav class="flex h-11 overflow-x-auto border-b border-base-300 bg-base-100 px-2 lg:hidden" aria-label="Motion workspaces">
+  <div class="tabs tabs-border min-w-max" role="tablist" aria-label="Motion workspaces mobile">
+    <button class="tab tab-active" type="button" role="tab" aria-selected="true" data-panel-target="pose-recorder">
+      Pose Recorder
+    </button>
+    <button class="tab" type="button" role="tab" aria-selected="false" data-panel-target="pose-composer">
+      Pose Composer
+    </button>
+    <button class="tab" type="button" role="tab" aria-selected="false" data-panel-target="action">
+      Action
+    </button>
+  </div>
+</nav>

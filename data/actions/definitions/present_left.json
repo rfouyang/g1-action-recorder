@@ -1,0 +1,29 @@
+{
+  "schema_version": 1,
+  "name": "present_left",
+  "robot_model_id": "unitree_g1_29dof_rev_1_0_fake_hand",
+  "initial_pose": {
+    "pose_type": "base",
+    "name": "concierge_init"
+  },
+  "transitions": [
+    {
+      "target_pose": {
+        "pose_type": "composed",
+        "name": "concierge_present_left"
+      },
+      "duration_seconds": 2.0,
+      "hold_seconds": 0.0
+    },
+    {
+      "target_pose": {
+        "pose_type": "base",
+        "name": "concierge_init"
+      },
+      "duration_seconds": 2.0,
+      "hold_seconds": 0.0
+    }
+  ],
+  "created_at": "2026-09-13T03:11:07.893255Z",
+  "notes": ""
+}

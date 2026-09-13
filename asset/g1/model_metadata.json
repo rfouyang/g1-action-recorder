@@ -1,0 +1,34 @@
+{
+  "schema_version": 1,
+  "model_id": "unitree_g1_29dof_rev_1_0_fake_hand",
+  "display_name": "Unitree G1 29-DOF revision 1.0 with fixed rubber hands",
+  "mode_machine": 5,
+  "floating_base_dof": 6,
+  "robot_joint_count": 29,
+  "leg_joint_count": 12,
+  "waist_joint_count": 3,
+  "arm_joint_count": 14,
+  "hand_joint_count": 0,
+  "pose_joint_count": 17,
+  "urdf": "g1_29dof_fake_hand.urdf",
+  "mjcf": "g1_29dof_fake_hand.xml",
+  "mesh_directory": "meshes",
+  "mesh_count": 35,
+  "hand_geometry": {
+    "left": "left_rubber_hand.STL",
+    "right": "right_rubber_hand.STL",
+    "attachment": "fixed"
+  },
+  "canonical_source": {
+    "repository": "https://github.com/unitreerobotics/unitree_ros",
+    "commit": "7d6075f7f58588b189b940130e3edab3c839b2df",
+    "source_urdf": "robots/g1_description/g1_29dof_rev_1_0.urdf",
+    "source_mjcf": "robots/g1_description/g1_29dof_rev_1_0.xml"
+  },
+  "dds_index_source": {
+    "repository": "https://github.com/unitreerobotics/unitree_mujoco",
+    "commit": "1eb6642e3f3fdfb7fb13a9794fd6a2dd93ea0e7d",
+    "source": "unitree_robots/g1/g1_joint_index_dds.md"
+  },
+  "license": "BSD-3-Clause"
+}

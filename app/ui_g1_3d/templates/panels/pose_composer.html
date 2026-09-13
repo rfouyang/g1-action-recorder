@@ -1,0 +1,97 @@
+<section
+  id="panel-pose-composer"
+  class="hidden p-5"
+  role="tabpanel"
+  aria-labelledby="tab-pose-composer"
+  data-panel="pose-composer"
+  data-pose-composer
+  data-default-base="{{ default_composer_base or '' }}"
+>
+  <p class="font-mono text-[0.65rem] uppercase tracking-[0.18em] text-base-content/50">02 · Assemble</p>
+  <h1 class="mt-1 text-xl font-bold tracking-tight">Pose Composer</h1>
+  <p class="mt-2 text-sm leading-5 text-base-content/65">
+    Start with a complete base, then optionally replace the robot's left arm,
+    right arm, or both.
+  </p>
+
+  <div class="divider my-4"></div>
+
+  <div class="space-y-2">
+    <fieldset class="fieldset border-l-4 border-neutral bg-neutral/10 px-3 py-2">
+      <legend class="fieldset-legend">Base pose · required</legend>
+      <select id="composer-base" class="select select-sm select-neutral w-full">
+        {% if not base_pose_names %}
+        <option value="">No base poses saved</option>
+        {% endif %}
+        {% for pose_name in base_pose_names %}
+        <option value="{{ pose_name }}" {% if pose_name == default_composer_base %}selected{% endif %}>{{ pose_name }}</option>
+        {% endfor %}
+      </select>
+    </fieldset>
+
+    <fieldset class="fieldset border-l-4 border-secondary bg-secondary/10 px-3 py-2">
+      <legend class="fieldset-legend text-secondary">Robot-left arm override · optional</legend>
+      <select id="composer-left-arm" class="select select-sm select-secondary w-full">
+        <option value="">Use arm from base</option>
+        {% for pose_name in left_arm_pose_names %}
+        <option value="{{ pose_name }}">{{ pose_name }}</option>
+        {% endfor %}
+      </select>
+    </fieldset>
+
+    <fieldset class="fieldset border-l-4 border-accent bg-accent/10 px-3 py-2">
+      <legend class="fieldset-legend text-accent">Robot-right arm override · optional</legend>
+      <select id="composer-right-arm" class="select select-sm select-accent w-full">
+        <option value="">Use arm from base</option>
+        {% for pose_name in right_arm_pose_names %}
+        <option value="{{ pose_name }}">{{ pose_name }}</option>
+        {% endfor %}
+      </select>
+    </fieldset>
+  </div>
+
+  <button id="preview-composition" class="btn btn-sm mt-3 w-full" type="button">
+    Preview composition
+  </button>
+
+  <div class="mt-5 border-t border-base-300 pt-4">
+    <h2 class="text-sm font-semibold">Save final pose</h2>
+    <div class="mt-2 grid grid-cols-1 gap-3 sm:grid-cols-2">
+      <fieldset class="fieldset">
+        <legend class="fieldset-legend">Final pose name</legend>
+        <input
+          id="composer-name"
+          class="input input-sm w-full"
+          type="text"
+          maxlength="100"
+          autocomplete="off"
+          placeholder="symmetric_welcome"
+        >
+      </fieldset>
+      <fieldset class="fieldset">
+        <legend class="fieldset-legend">Notes</legend>
+        <input
+          id="composer-notes"
+          class="input input-sm w-full"
+          type="text"
+          autocomplete="off"
+          placeholder="Optional"
+        >
+      </fieldset>
+    </div>
+    <label class="label mt-2 cursor-pointer justify-start gap-2 text-xs">
+      <input id="composer-overwrite" type="checkbox" class="checkbox checkbox-xs">
+      Allow replacing an existing composed pose
+    </label>
+    <button id="save-composition" class="btn btn-sm btn-neutral mt-3 w-full" type="button">
+      <span data-composer-save-label>Compose and save</span>
+      <span data-composer-save-loading class="loading loading-spinner loading-xs hidden" aria-hidden="true"></span>
+    </button>
+  </div>
+
+  <div id="composer-status" class="alert alert-info mt-4 py-2 text-xs" role="status">
+    Select source poses, then preview or save the result.
+  </div>
+  <div id="composer-success" class="alert alert-success mt-3 hidden py-2 text-xs" role="status"></div>
+  <div id="composer-error" class="alert alert-error mt-3 hidden py-2 text-xs" role="alert"></div>
+</section>
