@@ -4,6 +4,8 @@
 
 仓库名称：`g1-action-recorder`
 
+本地目录：`/home/rfouyang/workspace/services/g1-action-recorder`
+
 ## 当前结论
 
 3D 工程控制台已经完成第一轮端到端功能。当前唯一 Web UI 使用 FastAPI、

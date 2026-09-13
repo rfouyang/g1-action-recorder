@@ -295,5 +295,5 @@ poses without publishing any motor command.
 ## Repository identity
 
 The published project and Python distribution name is `g1-action-recorder`.
-The local checkout directory may retain its older workspace name without
-affecting imports or package metadata.
+The local checkout directory is also named `g1-action-recorder`:
+`/home/rfouyang/workspace/services/g1-action-recorder`.
