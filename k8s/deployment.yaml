@@ -18,7 +18,7 @@ spec:
     spec:
       containers:
         - name: g1-3d
-          image: g1-3d:v0.0.1
+          image: harbor.chs.gto-stc-aida.com/sysadmin-pub/g1-3d:v0.0.1
           imagePullPolicy: IfNotPresent
           ports:
             - name: http
@@ -31,7 +31,7 @@ spec:
             - name: BYTEPLUS_API_KEY
               valueFrom:
                 secretKeyRef:
-                  name: g1-3d
+                  name: g1-3d-secrets
                   key: BYTEPLUS_API_KEY
             - name: G1_3D_HOST
               value: "0.0.0.0"
