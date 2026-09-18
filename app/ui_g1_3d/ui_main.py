@@ -23,6 +23,7 @@ from app.ui_g1_3d.panels.pose_composer import (
     PoseComposerPanel,
 )
 from app.ui_g1_3d.panels.pose_recorder import PoseRecorderPanel
+from app.ui_g1_3d.panels.speech import GenerateSpeechCommand, SpeechPanel
 from app.ui_g1_3d.viser_manager import RobotCameraView
 from app.ui_g1_3d.websocket import (
     ui_action_playback_websocket,
@@ -34,6 +35,8 @@ from component.action_playback_service import (
 from component.action_player_service import ActionFileFormat
 from component.common.g1_joint_schema import PoseType
 from component.common.models import PoseDefinition
+from component.tts import TtsClip
+from util.byteplus_tts_helper import BytePlusTtsError
 
 LOGGER = logging.getLogger(__name__)
 TEMPLATE_DIR = Path(__file__).resolve().parent / "templates"
@@ -122,6 +125,7 @@ def home(request: Request) -> HTMLResponse:
         **PoseComposerPanel.template_context(context),
         **ActionComposerPanel.template_context(context),
         **ActionPlayerPanel.template_context(context),
+        **SpeechPanel.template_context(context),
     }
     return templates.TemplateResponse(
         request=request,
@@ -207,6 +211,90 @@ def list_poses(request: Request) -> dict[str, tuple[str, ...]]:
     """Return current saved pose names for browser workspace refreshes."""
     context = UIContext.from_request(request)
     return PoseComposerPanel.pose_names(context)
+
+
+@router.get("/ui/g1-3d/tts")
+def list_tts_clips(request: Request) -> dict[str, object]:
+    """Return the current local speech asset catalog."""
+    context = UIContext.from_request(request)
+    try:
+        clips = context.app.tts_service.list_clips()
+    except (FileNotFoundError, ValueError) as error:
+        raise HTTPException(status_code=500, detail=str(error)) from error
+    return {
+        "configured": context.app.tts_service.configured,
+        "clips": tuple(
+            _tts_clip_response(request=request, clip=clip) for clip in clips
+        ),
+    }
+
+
+@router.post("/ui/g1-3d/tts")
+def generate_tts_clip(
+    request: Request,
+    command: GenerateSpeechCommand,
+) -> dict[str, object]:
+    """Generate and persist one named G1-compatible speech clip."""
+    context = UIContext.from_request(request)
+    if not context.app.tts_service.configured:
+        raise HTTPException(status_code=503, detail="BytePlus TTS is not configured")
+    try:
+        clip = SpeechPanel.generate(context=context, command=command)
+    except FileExistsError as error:
+        raise HTTPException(
+            status_code=409,
+            detail=(
+                f"Speech clip {command.name!r} already exists. "
+                "Enable replacement to generate over it."
+            ),
+        ) from error
+    except BytePlusTtsError as error:
+        raise HTTPException(status_code=502, detail=str(error)) from error
+    except ValueError as error:
+        raise HTTPException(status_code=422, detail=str(error)) from error
+    return _tts_clip_response(request=request, clip=clip)
+
+
+@router.get(
+    "/ui/g1-3d/tts/{clip_name}/audio",
+    name="download_tts_audio",
+)
+def download_tts_audio(request: Request, clip_name: str) -> FileResponse:
+    """Return one catalogued WAV file for preview or download."""
+    context = UIContext.from_request(request)
+    try:
+        path = context.app.tts_service.audio_path(name=clip_name)
+    except (FileNotFoundError, ValueError) as error:
+        raise HTTPException(status_code=404, detail=str(error)) from error
+    return FileResponse(
+        path=path,
+        filename=path.name,
+        media_type="audio/wav",
+        headers={"Cache-Control": "no-store"},
+    )
+
+
+@router.delete("/ui/g1-3d/tts/{clip_name}")
+def delete_tts_clip(request: Request, clip_name: str) -> dict[str, str]:
+    """Delete one speech clip and its metadata sidecar."""
+    context = UIContext.from_request(request)
+    try:
+        clip = SpeechPanel.delete(context=context, name=clip_name)
+    except (FileNotFoundError, ValueError) as error:
+        raise HTTPException(status_code=404, detail=str(error)) from error
+    return {"deleted": clip.name}
+
+
+def _tts_clip_response(*, request: Request, clip: TtsClip) -> dict[str, object]:
+    audio_url = request.url_for("download_tts_audio", clip_name=clip.name)
+    return {
+        **clip.to_dict(),
+        "audio_url": str(
+            audio_url.include_query_params(
+                version=str(round(clip.created_at.timestamp() * 1_000_000))
+            )
+        ),
+    }
 
 
 @router.post("/ui/g1-3d/pose-composer/preview")

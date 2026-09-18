@@ -39,6 +39,7 @@ class EnvironmentTest(unittest.TestCase):
                 settings.action_definition_dir,
                 settings.action_trajectory_dir,
                 settings.action_preview_dir,
+                settings.tts_dir,
             )
             for directory in expected_directories:
                 self.assertTrue(directory.is_dir(), directory)

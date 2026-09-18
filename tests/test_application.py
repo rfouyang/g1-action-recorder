@@ -7,6 +7,7 @@ import unittest
 from pathlib import Path
 
 from app.application import RobotApplication
+from config.settings import AppSettings
 
 
 class RobotApplicationTest(unittest.TestCase):
@@ -14,10 +15,12 @@ class RobotApplicationTest(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temporary_directory:
             temporary_root = Path(temporary_directory)
             application = RobotApplication.create(
+                settings=AppSettings(),
                 pose_dir=temporary_root / "poses",
                 action_definition_dir=temporary_root / "actions",
                 action_trajectory_dir=temporary_root / "trajectories",
                 action_preview_dir=temporary_root / "previews",
+                tts_dir=temporary_root / "tts",
             )
 
             self.assertIs(application.action_service.pose_service, application.pose_service)
@@ -25,6 +28,8 @@ class RobotApplicationTest(unittest.TestCase):
             self.assertIs(application.action_player.action_service, application.action_service)
             self.assertIs(application.pose_service.schema, application.joint_schema)
             self.assertIs(application.simulation.schema, application.joint_schema)
+            self.assertFalse(application.tts_service.configured)
+            self.assertEqual(application.tts_service.tts_dir, temporary_root / "tts")
             self.assertEqual(
                 application.simulation.snapshot().joint_names,
                 application.joint_schema.DDS_JOINT_NAMES,

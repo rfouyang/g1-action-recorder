@@ -80,7 +80,7 @@ web_app = create_web_app()
 
 def main() -> None:
     logging.basicConfig(level=logging.INFO)
-    settings = AppSettings()
+    settings = AppSettings.from_env()
     LOGGER.info(
         "Starting G1 3D console at http://%s:%d",
         settings.g1_3d_host,

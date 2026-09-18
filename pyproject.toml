@@ -7,11 +7,14 @@ requires-python = ">=3.10,<3.11"
 dependencies = [
     "fastapi>=0.141,<1",
     "jinja2>=3.1,<4",
+    "loguru>=0.7.3",
     "mujoco>=3.3,<4",
     "numpy>=1.26,<3",
     "pillow>=11,<13",
     "pin-pink>=4.4,<5",
+    "python-dotenv>=1,<2",
     "quadprog>=0.1,<1",
+    "requests>=2.32,<3",
     "uvicorn>=0.52,<1",
     "viser[urdf]>=1.0,<2",
 ]

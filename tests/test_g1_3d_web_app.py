@@ -5,6 +5,7 @@ from __future__ import annotations
 import tempfile
 import time
 import unittest
+import wave
 from pathlib import Path
 
 from fastapi.testclient import TestClient
@@ -13,6 +14,31 @@ from app.application import RobotApplication
 from app.g1_3d_main import create_web_app
 from component.common.g1_joint_schema import PoseType
 from config.settings import AppSettings
+
+
+class FakeBytePlusTtsHelper:
+    speaker = "test-speaker"
+
+    def generate(
+        self,
+        text: str,
+        output_path: Path,
+        *,
+        speaker: str | None = None,
+        tone: str | None = None,
+        emotion_strength: int = 4,
+        speech_rate: int = 0,
+        loudness_rate: int = 0,
+        pitch: int = 0,
+        style_instruction: str = "",
+    ) -> Path:
+        output_path.parent.mkdir(parents=True, exist_ok=True)
+        with wave.open(str(output_path), "wb") as wav_file:
+            wav_file.setnchannels(1)
+            wav_file.setsampwidth(2)
+            wav_file.setframerate(16_000)
+            wav_file.writeframes(b"\x00\x00" * 20_000)
+        return output_path
 
 
 class G13DWebAppTest(unittest.TestCase):
@@ -26,6 +52,8 @@ class G13DWebAppTest(unittest.TestCase):
             action_definition_dir=temporary_root / "actions",
             action_trajectory_dir=temporary_root / "trajectories",
             action_preview_dir=temporary_root / "previews",
+            tts_dir=temporary_root / "tts",
+            byteplus_helper=FakeBytePlusTtsHelper(),
         )
         self.client = TestClient(
             create_web_app(robot_application=self.robot_application)
@@ -36,7 +64,7 @@ class G13DWebAppTest(unittest.TestCase):
         self.client.__exit__(None, None, None)
         self.temporary_directory.cleanup()
 
-    def test_ui_exposes_four_workspaces_and_six_camera_presets(self) -> None:
+    def test_ui_exposes_five_workspaces_and_six_camera_presets(self) -> None:
         response = self.client.get("/")
 
         self.assertEqual(response.status_code, 200)
@@ -44,6 +72,7 @@ class G13DWebAppTest(unittest.TestCase):
         self.assertIn("Pose Composer", response.text)
         self.assertIn("Action Composer", response.text)
         self.assertIn("Action Player", response.text)
+        self.assertIn("Speech", response.text)
         for camera_label in (
             "Front",
             "Back",
@@ -59,6 +88,65 @@ class G13DWebAppTest(unittest.TestCase):
         )
         self.assertNotIn("Viser scene connects in the next step", response.text)
         self.assertEqual(response.text.count("data-camera-view="), 6)
+
+    def test_speech_panel_generates_lists_and_downloads_wav(self) -> None:
+        page = self.client.get("/")
+        generated = self.client.post(
+            "/ui/g1-3d/tts",
+            json={
+                "name": "concierge_welcome",
+                "text": "Hello, welcome to our demonstration.",
+                "emotion_strength": 5,
+                "speech_rate": 10,
+                "loudness_rate": -5,
+                "pitch": 1,
+                "style_instruction": "Speak like a gracious host.",
+                "overwrite": False,
+            },
+        )
+        catalog = self.client.get("/ui/g1-3d/tts")
+        audio = self.client.get(generated.json()["audio_url"])
+        deleted = self.client.delete("/ui/g1-3d/tts/concierge_welcome")
+        empty_catalog = self.client.get("/ui/g1-3d/tts")
+
+        self.assertEqual(page.status_code, 200)
+        self.assertIn('data-panel-target="speech"', page.text)
+        self.assertIn('data-speech-panel', page.text)
+        self.assertIn('id="speech-speaker"', page.text)
+        self.assertIn('id="speech-tone"', page.text)
+        self.assertIn('id="speech-emotion-strength"', page.text)
+        self.assertIn('id="speech-rate"', page.text)
+        self.assertIn('id="speech-loudness"', page.text)
+        self.assertIn('id="speech-pitch"', page.text)
+        self.assertIn('id="speech-style-instruction"', page.text)
+        self.assertIn('data-workspace-viewer', page.text)
+        self.assertIn("app.css?v=3", page.text)
+        self.assertIn("app.js?v=3", page.text)
+        self.assertIn("speech.js?v=5", page.text)
+        self.assertEqual(generated.status_code, 200)
+        self.assertEqual(generated.json()["wav_filename"], "concierge_welcome.wav")
+        self.assertEqual(generated.json()["speaker_name"], "Kian (recommended)")
+        self.assertEqual(generated.json()["tone_name"], "Warm")
+        self.assertEqual(generated.json()["emotion_strength"], 5)
+        self.assertEqual(generated.json()["speech_rate"], 10)
+        self.assertEqual(generated.json()["loudness_rate"], -5)
+        self.assertEqual(generated.json()["pitch"], 1)
+        self.assertEqual(
+            generated.json()["style_instruction"],
+            "Speak like a gracious host.",
+        )
+        self.assertIn("?version=", generated.json()["audio_url"])
+        self.assertAlmostEqual(generated.json()["duration_seconds"], 1.25)
+        self.assertEqual(catalog.status_code, 200)
+        self.assertTrue(catalog.json()["configured"])
+        self.assertEqual(catalog.json()["clips"][0]["text"], generated.json()["text"])
+        self.assertEqual(audio.status_code, 200)
+        self.assertEqual(audio.headers["content-type"], "audio/wav")
+        self.assertEqual(audio.headers["cache-control"], "no-store")
+        self.assertGreater(len(audio.content), 40_000)
+        self.assertEqual(deleted.status_code, 200)
+        self.assertEqual(deleted.json(), {"deleted": "concierge_welcome"})
+        self.assertEqual(empty_catalog.json()["clips"], [])
 
     def test_action_player_renders_import_and_joint_ownership_controls(self) -> None:
         response = self.client.get("/")
@@ -502,6 +590,7 @@ class G13DWebAppTest(unittest.TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertIn(".navbar", response.text)
         self.assertIn(".viewer-grid", response.text)
+        self.assertIn("#panel-speech:not(.hidden)", response.text)
 
     def test_rest_joint_update_reaches_mujoco_and_viser(self) -> None:
         response = self.client.put(

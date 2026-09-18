@@ -12,8 +12,10 @@ from component.action_service import ActionService
 from component.common.g1_joint_schema import G1JointSchema
 from component.pose_service import PoseService
 from component.simulation import SimulationService
+from component.tts import TtsService
 from config.settings import AppSettings
 from util.ardy_action_helper import ArdyActionHelper
+from util.byteplus_tts_helper import BytePlusTtsHelper
 from util.g1_asset_helper import G1AssetHelper
 from util.g1_motion_conversion_helper import G1MotionConversionHelper
 from util.kimodo_action_helper import KimodoActionHelper
@@ -22,6 +24,7 @@ from util.mujoco_pose_helper import MujocoPoseHelper
 from util.numpy_archive_helper import NumpyArchiveHelper
 from util.pink_ik_helper import PinkIKHelper
 from util.pose_file_helper import PoseFileHelper
+from util.tts_file_helper import TtsFileHelper
 
 LOGGER = logging.getLogger(__name__)
 
@@ -36,6 +39,7 @@ class RobotApplication:
     pose_service: PoseService
     action_service: ActionService
     action_player: ActionPlayerService
+    tts_service: TtsService
 
     @classmethod
     def create(
@@ -46,9 +50,11 @@ class RobotApplication:
         action_definition_dir: Path | None = None,
         action_trajectory_dir: Path | None = None,
         action_preview_dir: Path | None = None,
+        tts_dir: Path | None = None,
+        byteplus_helper: BytePlusTtsHelper | None = None,
     ) -> RobotApplication:
         """Build the current pose and action capabilities from one configuration."""
-        resolved_settings = settings or AppSettings()
+        resolved_settings = settings or AppSettings.from_env()
         resolved_settings.ensure_runtime_directories()
 
         asset_helper = G1AssetHelper(asset_dir=resolved_settings.g1_asset_dir)
@@ -115,6 +121,16 @@ class RobotApplication:
             ),
             ardy_helper=ArdyActionHelper(conversion_helper=conversion_helper),
         )
+        resolved_byteplus_helper = byteplus_helper
+        if resolved_byteplus_helper is None and resolved_settings.byteplus_api_key:
+            resolved_byteplus_helper = BytePlusTtsHelper(
+                api_key=resolved_settings.byteplus_api_key
+            )
+        tts_service = TtsService(
+            tts_dir=tts_dir or resolved_settings.tts_dir,
+            file_helper=TtsFileHelper(),
+            byteplus_helper=resolved_byteplus_helper,
+        )
         return cls(
             settings=resolved_settings,
             joint_schema=joint_schema,
@@ -122,6 +138,7 @@ class RobotApplication:
             pose_service=pose_service,
             action_service=action_service,
             action_player=action_player,
+            tts_service=tts_service,
         )
 
 

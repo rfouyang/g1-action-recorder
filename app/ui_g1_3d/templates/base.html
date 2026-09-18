@@ -7,7 +7,7 @@
     <title>G1 Action Recorder · Motion Studio</title>
     <link
       rel="stylesheet"
-      href="{{ url_for('g1_3d_static', path='/css/app.css') }}"
+      href="{{ url_for('g1_3d_static', path='/css/app.css') }}?v=3"
     >
     <script
       defer
@@ -31,18 +31,23 @@
     ></script>
     <script
       defer
-      src="{{ url_for('g1_3d_static', path='/js/app.js') }}"
+      src="{{ url_for('g1_3d_static', path='/js/panels/speech.js') }}?v=5"
+    ></script>
+    <script
+      defer
+      src="{{ url_for('g1_3d_static', path='/js/app.js') }}?v=3"
     ></script>
   </head>
   <body class="h-screen min-h-[42rem] overflow-hidden bg-base-200 text-base-content antialiased">
     {% include "layout/navbar.html" %}
 
-    <main class="grid h-[calc(100vh-6.75rem)] min-h-[35rem] grid-cols-1 lg:h-[calc(100vh-4rem)] lg:min-h-[38rem] lg:grid-cols-[minmax(0,1fr)_minmax(0,2fr)]">
-      <aside class="min-h-0 overflow-y-auto border-r border-base-300 bg-base-100">
+    <main data-workspace-main class="grid h-[calc(100vh-6.75rem)] min-h-[35rem] grid-cols-1 lg:h-[calc(100vh-4rem)] lg:min-h-[38rem] lg:grid-cols-[minmax(0,1fr)_minmax(0,2fr)]">
+      <aside data-workspace-panels class="min-h-0 overflow-y-auto border-r border-base-300 bg-base-100">
         {% include "panels/pose_recorder.html" %}
         {% include "panels/pose_composer.html" %}
         {% include "panels/action.html" %}
         {% include "panels/action_player.html" %}
+        {% include "panels/speech.html" %}
       </aside>
 
       {% include "components/viewer.html" %}

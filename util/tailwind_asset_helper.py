@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import logging
+import os
 import shutil
 import subprocess
 from dataclasses import dataclass
@@ -38,29 +39,59 @@ class TailwindAssetHelper:
         """Build stale assets and return whether a build was performed."""
         if not self.needs_build():
             return False
-        if shutil.which("npm") is None:
+        npm_command = self._find_npm_command()
+        if npm_command is None:
             raise RuntimeError(
-                "The G1 3D CSS needs rebuilding, but npm is not installed."
+                "The G1 3D CSS needs rebuilding, but npm was not found. "
+                "Install Node.js or add npm to PATH."
             )
+        npm_environment = self._npm_environment(npm_command)
 
         tailwind_cli = self.project_root / "node_modules" / ".bin" / "tailwindcss"
         if not tailwind_cli.is_file():
             LOGGER.info("Installing local frontend build dependencies")
             subprocess.run(
-                ["npm", "install"],
+                [str(npm_command), "install"],
                 cwd=self.project_root,
                 check=True,
+                env=npm_environment,
             )
 
         LOGGER.info("Building updated Tailwind and daisyUI styles")
         subprocess.run(
-            ["npm", "run", "build:css"],
+            [str(npm_command), "run", "build:css"],
             cwd=self.project_root,
             check=True,
+            env=npm_environment,
         )
         if not self.output_path.is_file():
             raise RuntimeError(f"CSS build did not create {self.output_path}")
         return True
+
+    @staticmethod
+    def _find_npm_command() -> Path | None:
+        """Locate npm when an IDE does not inherit an NVM-managed PATH."""
+        if npm_path := shutil.which("npm"):
+            return Path(npm_path)
+
+        nvm_directory = Path(os.environ.get("NVM_DIR", Path.home() / ".nvm"))
+        nvm_npm_commands = sorted(
+            nvm_directory.glob("versions/node/*/bin/npm"),
+            reverse=True,
+        )
+        return next((path for path in nvm_npm_commands if path.is_file()), None)
+
+    @staticmethod
+    def _npm_environment(npm_command: Path) -> dict[str, str]:
+        """Ensure the Node executable beside an NVM npm launcher is available."""
+        environment = os.environ.copy()
+        existing_path = environment.get("PATH", "")
+        environment["PATH"] = (
+            f"{npm_command.parent}{os.pathsep}{existing_path}"
+            if existing_path
+            else str(npm_command.parent)
+        )
+        return environment
 
     def needs_build(self) -> bool:
         """Return whether any frontend source is newer than the CSS bundle."""

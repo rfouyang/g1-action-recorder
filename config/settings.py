@@ -3,8 +3,11 @@
 from __future__ import annotations
 
 import logging
+import os
 from dataclasses import dataclass
 from pathlib import Path
+
+from dotenv import load_dotenv
 
 LOGGER = logging.getLogger(__name__)
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
@@ -21,6 +24,19 @@ class AppSettings:
     viser_host: str = "127.0.0.1"
     viser_port: int = 8081
     initial_base_pose_name: str = CONCIERGE_INITIAL_POSE_NAME
+    byteplus_api_key: str | None = None
+
+    @classmethod
+    def from_env(cls) -> AppSettings:
+        """Load local application secrets without exposing them to callers."""
+        load_dotenv(PROJECT_ROOT / ".env")
+        return cls(
+            byteplus_api_key=(
+                os.getenv("BYTEPLUS_API_KEY")
+                or os.getenv("BYTEPLUS_APY_KEY")
+                or None
+            )
+        )
 
     @property
     def asset_dir(self) -> Path:
@@ -59,6 +75,10 @@ class AppSettings:
         return self.data_dir / "action_previews"
 
     @property
+    def tts_dir(self) -> Path:
+        return self.data_dir / "tts"
+
+    @property
     def third_party_dir(self) -> Path:
         return self.project_root / "third_party"
 
@@ -73,6 +93,7 @@ class AppSettings:
             self.action_definition_dir,
             self.action_trajectory_dir,
             self.action_preview_dir,
+            self.tts_dir,
         ):
             directory.mkdir(parents=True, exist_ok=True)
 

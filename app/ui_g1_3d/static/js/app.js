@@ -2,6 +2,9 @@ class WorkspaceTabs {
   constructor(root = document) {
     this.tabs = [...root.querySelectorAll("[data-panel-target]")];
     this.panels = [...root.querySelectorAll("[data-panel]")];
+    this.workspace = root.querySelector("[data-workspace-main]");
+    this.panelContainer = root.querySelector("[data-workspace-panels]");
+    this.viewer = root.querySelector("[data-workspace-viewer]");
   }
 
   start() {
@@ -24,6 +27,21 @@ class WorkspaceTabs {
 
     for (const panel of this.panels) {
       panel.classList.toggle("hidden", panel.dataset.panel !== panelName);
+    }
+
+    const hideViewer = panelName === "speech";
+    if (this.workspace) {
+      this.workspace.dataset.viewerHidden = String(hideViewer);
+      this.workspace.style.gridTemplateColumns = hideViewer
+        ? "minmax(0, 1fr)"
+        : "";
+    }
+    if (this.panelContainer) {
+      this.panelContainer.style.gridColumn = hideViewer ? "1 / -1" : "";
+      this.panelContainer.style.width = hideViewer ? "100%" : "";
+    }
+    if (this.viewer) {
+      this.viewer.hidden = hideViewer;
     }
 
     if (updateLocation) {
@@ -124,5 +142,6 @@ window.addEventListener("DOMContentLoaded", () => {
   new window.PoseComposerPanel().start();
   new window.ActionComposerPanel().start();
   new window.ActionPlayerPanel().start();
+  new window.SpeechPanel().start();
   new ViserViewer().start();
 });

@@ -1,0 +1,155 @@
+<section
+  id="panel-speech"
+  class="hidden p-5"
+  role="tabpanel"
+  aria-labelledby="tab-speech"
+  data-panel="speech"
+  data-speech-panel
+  data-tts-configured="{{ 'true' if tts_configured else 'false' }}"
+>
+  <div class="flex items-start justify-between gap-3">
+    <div>
+      <p class="font-mono text-[0.65rem] uppercase tracking-[0.18em] text-base-content/50">05 · Voice</p>
+      <h1 class="mt-1 text-xl font-bold tracking-tight">Speech</h1>
+    </div>
+    <span
+      id="speech-config-status"
+      class="badge badge-sm {{ 'badge-success' if tts_configured else 'badge-warning' }}"
+    >{{ 'BytePlus ready' if tts_configured else 'Key missing' }}</span>
+  </div>
+  <p class="mt-2 text-sm leading-5 text-base-content/65">
+    Generate 16 kHz mono WAV assets and use their exact duration when timing an action.
+  </p>
+
+  <div class="divider my-4"></div>
+
+  {% if not tts_configured %}
+  <div class="alert alert-warning py-2 text-xs" role="note">
+    Set <span class="font-mono">BYTEPLUS_API_KEY</span> in <span class="font-mono">.env</span> and restart the application to enable generation.
+  </div>
+  {% endif %}
+
+  <div class="mt-3 grid grid-cols-1 gap-3 md:grid-cols-2">
+    <fieldset class="fieldset">
+      <legend class="fieldset-legend">Clip name</legend>
+      <input
+        id="speech-name"
+        class="input input-sm w-full"
+        type="text"
+        maxlength="100"
+        autocomplete="off"
+        placeholder="e.g. concierge_welcome"
+      >
+    </fieldset>
+    <fieldset class="fieldset">
+      <legend class="fieldset-legend">Output</legend>
+      <div class="input input-sm flex w-full items-center bg-base-200 font-mono text-xs text-base-content/60">
+        data/tts/&lt;name&gt;.wav
+      </div>
+    </fieldset>
+  </div>
+
+  <div class="mt-3 grid grid-cols-1 gap-3 md:grid-cols-2">
+    <fieldset class="fieldset">
+      <legend class="fieldset-legend">Voice · Chinese + English</legend>
+      <select id="speech-speaker" class="select select-sm w-full">
+        {% for speaker in tts_speakers %}
+        <option value="{{ speaker.id }}" {% if speaker.id == tts_default_speaker %}selected{% endif %}>
+          {{ speaker.name }} · {{ speaker.description }}
+        </option>
+        {% endfor %}
+      </select>
+    </fieldset>
+    <fieldset class="fieldset">
+      <legend class="fieldset-legend">Emotion</legend>
+      <select id="speech-tone" class="select select-sm w-full">
+        {% for tone in tts_tones %}
+        <option value="{{ tone.id }}" {% if tone.id == tts_default_tone %}selected{% endif %}>{{ tone.name }}</option>
+        {% endfor %}
+      </select>
+    </fieldset>
+  </div>
+
+  <div class="mt-3 grid grid-cols-1 gap-x-4 gap-y-2 md:grid-cols-2 xl:grid-cols-4">
+    <fieldset class="fieldset">
+      <legend class="fieldset-legend flex w-full justify-between">
+        <span>Emotion strength</span>
+        <output id="speech-emotion-strength-value" class="font-mono">4 / 5</output>
+      </legend>
+      <input id="speech-emotion-strength" class="range range-xs" type="range" min="1" max="5" step="1" value="4">
+    </fieldset>
+    <fieldset class="fieldset">
+      <legend class="fieldset-legend flex w-full justify-between">
+        <span>Speech rate</span>
+        <output id="speech-rate-value" class="font-mono">0</output>
+      </legend>
+      <input id="speech-rate" class="range range-xs" type="range" min="-50" max="100" step="5" value="0">
+    </fieldset>
+    <fieldset class="fieldset">
+      <legend class="fieldset-legend flex w-full justify-between">
+        <span>Volume</span>
+        <output id="speech-loudness-value" class="font-mono">0</output>
+      </legend>
+      <input id="speech-loudness" class="range range-xs" type="range" min="-50" max="100" step="5" value="0">
+    </fieldset>
+    <fieldset class="fieldset">
+      <legend class="fieldset-legend flex w-full justify-between">
+        <span>Pitch</span>
+        <output id="speech-pitch-value" class="font-mono">0</output>
+      </legend>
+      <input id="speech-pitch" class="range range-xs" type="range" min="-12" max="12" step="1" value="0">
+    </fieldset>
+  </div>
+
+  <fieldset class="fieldset mt-3">
+    <legend class="fieldset-legend">Extra delivery instruction · optional</legend>
+    <input
+      id="speech-style-instruction"
+      class="input input-sm w-full"
+      type="text"
+      maxlength="300"
+      autocomplete="off"
+      placeholder="e.g. Speak like a patient museum guide, with a slight smile."
+    >
+  </fieldset>
+
+  <fieldset class="fieldset mt-3">
+    <legend class="fieldset-legend">Text to speak</legend>
+    <textarea
+      id="speech-text"
+      class="textarea min-h-28 w-full"
+      maxlength="5000"
+      placeholder="Enter Chinese, English, or bilingual speech text"
+    ></textarea>
+    <div class="label justify-end"><span id="speech-character-count">0 / 5000</span></div>
+  </fieldset>
+
+  <label class="label mt-1 cursor-pointer justify-start gap-2 text-xs">
+    <input id="speech-overwrite" type="checkbox" class="checkbox checkbox-xs">
+    Allow replacing an existing clip with the same name
+  </label>
+
+  <button
+    id="speech-generate"
+    class="btn btn-sm btn-neutral mt-3 w-full"
+    type="button"
+    {% if not tts_configured %}disabled{% endif %}
+  >
+    <span data-speech-generate-label>Generate WAV</span>
+    <span data-speech-generate-loading class="loading loading-spinner loading-xs hidden" aria-hidden="true"></span>
+  </button>
+
+  <div id="speech-success" class="alert alert-success mt-3 hidden py-2 text-xs" role="status"></div>
+  <div id="speech-error" class="alert alert-error mt-3 hidden py-2 text-xs" role="alert"></div>
+
+  <div class="mt-5 border-t border-base-300 pt-4">
+    <div class="mb-3 flex items-center justify-between gap-3">
+      <div>
+        <h2 class="text-sm font-semibold">Saved speech clips</h2>
+        <p id="speech-catalog-summary" class="mt-0.5 text-xs text-base-content/55">Loading catalog</p>
+      </div>
+      <button id="speech-refresh" class="btn btn-ghost btn-xs" type="button">Refresh</button>
+    </div>
+    <div id="speech-clips" class="space-y-3" aria-live="polite"></div>
+  </div>
+</section>

@@ -26,6 +26,22 @@
 }
 
 @layer components {
+  @media (min-width: 64rem) {
+    [data-workspace-main][data-viewer-hidden="true"],
+    [data-workspace-main]:has(#panel-speech:not(.hidden)) {
+      grid-template-columns: minmax(0, 1fr);
+    }
+  }
+
+  [data-workspace-main]:has(#panel-speech:not(.hidden)) [data-workspace-viewer] {
+    display: none !important;
+  }
+
+  [data-workspace-main]:has(#panel-speech:not(.hidden)) [data-workspace-panels] {
+    grid-column: 1 / -1;
+    width: 100%;
+  }
+
   .viewer-grid {
     background-color: oklch(18% 0.012 255);
     background-image:
