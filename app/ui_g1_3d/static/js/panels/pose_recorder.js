@@ -24,6 +24,7 @@ class PoseRecorderPanel {
     this.poseName = root.querySelector("#pose-name");
     this.poseNotes = root.querySelector("#pose-notes");
     this.poseOverwrite = root.querySelector("#pose-overwrite");
+    this.mirrorButtons = [...root.querySelectorAll("[data-mirror-arm]")];
     this.initialTargets = new Map(
       this.resetButtons.map((button) => [
         button.dataset.jointName,
@@ -53,10 +54,54 @@ class PoseRecorderPanel {
     for (const button of this.resetButtons) {
       button.addEventListener("click", () => this.resetJoint(button));
     }
+    for (const button of this.mirrorButtons) {
+      button.addEventListener("click", () => this.mirrorArm(button));
+    }
     this.resetButton.addEventListener("click", () => this.resetTargets());
     this.saveButton.addEventListener("click", () => this.savePose());
     this.filterRows();
     this.socket.start();
+  }
+
+  async mirrorArm(button) {
+    const sourcePoseType = button.dataset.mirrorArm;
+    for (const mirrorButton of this.mirrorButtons) {
+      mirrorButton.disabled = true;
+    }
+    this.hideFeedback();
+    try {
+      const response = await fetch("/ui/g1-3d/pose-recorder/mirror-arm", {
+        method: "POST",
+        headers: {
+          Accept: "application/json",
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          source_pose_type: sourcePoseType,
+        }),
+      });
+      const result = await response.json();
+      if (!response.ok) {
+        throw new Error(result.detail || `Mirror failed with ${response.status}`);
+      }
+      for (const [jointName, value] of Object.entries({
+        ...result.source_joint_positions,
+        ...result.joint_positions,
+      })) {
+        this.setTargetInputs(jointName, Number(value));
+      }
+      this.groupSelect.value = result.target_pose_type;
+      this.filterRows();
+      this.showSuccess(
+        `Mirrored ${this.poseTypeLabel(result.source_pose_type)} to ${this.poseTypeLabel(result.target_pose_type)}. Save the destination arm when ready.`,
+      );
+    } catch (error) {
+      this.showError(error.message);
+    } finally {
+      for (const mirrorButton of this.mirrorButtons) {
+        mirrorButton.disabled = false;
+      }
+    }
   }
 
   filterRows() {

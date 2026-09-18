@@ -235,20 +235,10 @@ class PoseService:
     ) -> PoseDefinition:
         """Mirror one anatomical robot arm to the opposite arm."""
         self._validate_pose(source_pose)
-        if source_pose.pose_type is PoseType.LEFT_ARM:
-            target_pose_type = PoseType.RIGHT_ARM
-            mirrored_values = {
-                rule.right_joint: rule.sign * source_pose.joint_values[rule.left_joint]
-                for rule in self.ARM_MIRROR_RULES
-            }
-        elif source_pose.pose_type is PoseType.RIGHT_ARM:
-            target_pose_type = PoseType.LEFT_ARM
-            mirrored_values = {
-                rule.left_joint: rule.sign * source_pose.joint_values[rule.right_joint]
-                for rule in self.ARM_MIRROR_RULES
-            }
-        else:
-            raise ValueError("Only left_arm and right_arm poses can be mirrored")
+        target_pose_type, mirrored_values = self.mirror_arm_values(
+            source_pose_type=source_pose.pose_type,
+            joint_values=source_pose.joint_values,
+        )
 
         return PoseDefinition.create(
             schema=self.schema,
@@ -261,6 +251,36 @@ class PoseService:
                 "mirror_source_type": source_pose.pose_type.value,
             },
             notes=notes,
+        )
+
+    def mirror_arm_values(
+        self,
+        *,
+        source_pose_type: PoseType,
+        joint_values: Mapping[str, object],
+    ) -> tuple[PoseType, dict[str, float]]:
+        """Validate and reflect one G1 arm across the robot's sagittal plane."""
+        if source_pose_type not in {PoseType.LEFT_ARM, PoseType.RIGHT_ARM}:
+            raise ValueError("Only left_arm and right_arm values can be mirrored")
+        validated = self.schema.validate_joint_values(
+            pose_type=source_pose_type,
+            joint_values=joint_values,
+        )
+        if source_pose_type is PoseType.LEFT_ARM:
+            target_pose_type = PoseType.RIGHT_ARM
+            mirrored_values = {
+                rule.right_joint: rule.sign * validated[rule.left_joint]
+                for rule in self.ARM_MIRROR_RULES
+            }
+        else:
+            target_pose_type = PoseType.LEFT_ARM
+            mirrored_values = {
+                rule.left_joint: rule.sign * validated[rule.right_joint]
+                for rule in self.ARM_MIRROR_RULES
+            }
+        return target_pose_type, self.schema.validate_joint_values(
+            pose_type=target_pose_type,
+            joint_values=mirrored_values,
         )
 
     def _pose_path(self, *, pose_type: PoseType, name: str) -> Path:

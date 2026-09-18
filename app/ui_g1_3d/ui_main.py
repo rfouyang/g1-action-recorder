@@ -65,6 +65,14 @@ class SavePoseCommand(BaseModel):
     overwrite: bool = False
 
 
+class MirrorArmCommand(BaseModel):
+    """An anatomical source arm to capture from the live MuJoCo editor."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    source_pose_type: PoseType
+
+
 class PlayActionCommand(BaseModel):
     """Browser command for starting one saved trajectory."""
 
@@ -164,6 +172,30 @@ def save_pose(
     return {
         "pose_name": pose.name,
         "pose_type": pose.pose_type.value,
+        "revision": revision,
+    }
+
+
+@router.post("/ui/g1-3d/pose-recorder/mirror-arm")
+def mirror_recorder_arm(
+    request: Request,
+    command: MirrorArmCommand,
+) -> dict[str, object]:
+    """Mirror live recorder values into the opposite G1 MuJoCo arm."""
+    try:
+        target_pose_type, source_values, mirrored, revision = (
+            PoseRecorderPanel.mirror_arm(
+                context=UIContext.from_request(request),
+                source_pose_type=command.source_pose_type,
+            )
+        )
+    except ValueError as error:
+        raise HTTPException(status_code=422, detail=str(error)) from error
+    return {
+        "source_pose_type": command.source_pose_type.value,
+        "target_pose_type": target_pose_type.value,
+        "source_joint_positions": source_values,
+        "joint_positions": mirrored,
         "revision": revision,
     }
 

@@ -136,6 +136,8 @@ class G13DWebAppTest(unittest.TestCase):
         self.assertIn('badge-accent badge-sm">Robot-right arm', response.text)
         self.assertIn("range-secondary", response.text)
         self.assertIn("range-accent", response.text)
+        self.assertIn('data-mirror-arm="left_arm"', response.text)
+        self.assertIn('data-mirror-arm="right_arm"', response.text)
         self.assertIn('value="concierge_init"', response.text)
         self.assertEqual(response.text.count("data-joint-reset"), 17)
         self.assertNotIn(
@@ -169,6 +171,43 @@ class G13DWebAppTest(unittest.TestCase):
         )
         self.assertEqual(saved.joint_values["left_elbow_joint"], 0.75)
         self.assertEqual(saved.notes, "UI save test")
+
+    def test_pose_recorder_mirrors_live_g1_arm_without_saving(self) -> None:
+        self.robot_application.simulation.update_joint_positions(
+            {"waist_yaw_joint": 0.2}
+        )
+        left_values = dict(
+            zip(
+                self.robot_application.joint_schema.LEFT_ARM_JOINT_NAMES,
+                (0.4, 0.35, -0.3, 0.8, 0.25, -0.2, 0.3),
+                strict=True,
+            )
+        )
+        self.robot_application.simulation.update_joint_positions(left_values)
+
+        response = self.client.post(
+            "/ui/g1-3d/pose-recorder/mirror-arm",
+            json={"source_pose_type": "left_arm"},
+        )
+
+        self.assertEqual(response.status_code, 200)
+        result = response.json()
+        self.assertEqual(result["target_pose_type"], "right_arm")
+        self.assertEqual(result["source_joint_positions"], left_values)
+        self.assertEqual(result["joint_positions"]["right_shoulder_pitch_joint"], 0.4)
+        self.assertEqual(result["joint_positions"]["right_shoulder_roll_joint"], -0.35)
+        self.assertEqual(result["joint_positions"]["right_wrist_roll_joint"], -0.25)
+        self.assertEqual(result["joint_positions"]["right_wrist_pitch_joint"], -0.2)
+        state = self.robot_application.simulation.snapshot().joint_position_map()
+        self.assertEqual(state["waist_yaw_joint"], 0.2)
+        self.assertEqual(state["left_shoulder_roll_joint"], 0.35)
+        self.assertEqual(state["right_shoulder_roll_joint"], -0.35)
+        self.assertEqual(
+            self.robot_application.pose_service.list_poses(
+                pose_type=PoseType.RIGHT_ARM
+            ),
+            (),
+        )
 
     def test_pose_recorder_requires_explicit_replacement(self) -> None:
         left_joint_positions = {
