@@ -1,0 +1,23 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  annotations:
+    cert-manager.io/cluster-issuer: selfsigned
+  name: g1-3d-viser
+spec:
+  ingressClassName: nginx
+  rules:
+  - host: g1-3d-viser.chs.gto-stc-aida.com
+    http:
+      paths:
+      - backend:
+          service:
+            name: g1-3d
+            port:
+              name: viser
+        path: /
+        pathType: Prefix
+  tls:
+  - hosts:
+    - g1-3d-viser.chs.gto-stc-aida.com
+    secretName: g1-3d-viser.chs.gto-stc-aida.com

@@ -28,14 +28,18 @@ class AppSettings:
 
     @classmethod
     def from_env(cls) -> AppSettings:
-        """Load local application secrets without exposing them to callers."""
+        """Load local secrets and optional host/port overrides from the environment."""
         load_dotenv(PROJECT_ROOT / ".env")
         return cls(
+            g1_3d_host=os.getenv("G1_3D_HOST", "127.0.0.1"),
+            g1_3d_port=int(os.getenv("G1_3D_PORT", "8000")),
+            viser_host=os.getenv("VISER_HOST", "127.0.0.1"),
+            viser_port=int(os.getenv("VISER_PORT", "8081")),
             byteplus_api_key=(
                 os.getenv("BYTEPLUS_API_KEY")
                 or os.getenv("BYTEPLUS_APY_KEY")
                 or None
-            )
+            ),
         )
 
     @property
