@@ -23,7 +23,7 @@
     "right_wrist_yaw_joint": 0.03313784188508749
   },
   "source": "composition",
-  "created_at": "2026-09-13T05:36:40.804072Z",
+  "created_at": "2026-09-18T02:56:27.166000Z",
   "source_parts": {
     "base": "concierge_init",
     "left_arm": "concierge_stand",
