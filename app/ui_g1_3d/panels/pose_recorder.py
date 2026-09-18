@@ -102,21 +102,18 @@ class PoseRecorderPanel:
         *,
         context: UIContext,
         source_pose_type: PoseType,
+        source_positions: dict[str, float],
     ) -> tuple[PoseType, dict[str, float], dict[str, float], int]:
-        """Capture the live G1 arm and mirror it into the opposite MuJoCo arm."""
-        snapshot = context.app.simulation.snapshot()
-        current_positions = snapshot.joint_position_map()
-        source_positions = {
-            joint_name: current_positions[joint_name]
-            for joint_name in context.app.joint_schema.joint_names(source_pose_type)
-        }
+        """Validate the current editor arm and mirror it in MuJoCo."""
         target_pose_type, mirrored_positions = (
             context.app.pose_service.mirror_arm_values(
                 source_pose_type=source_pose_type,
                 joint_values=source_positions,
             )
         )
-        updated = context.app.simulation.update_joint_positions(mirrored_positions)
+        updated = context.app.simulation.update_joint_positions(
+            {**source_positions, **mirrored_positions}
+        )
         return (
             target_pose_type,
             source_positions,

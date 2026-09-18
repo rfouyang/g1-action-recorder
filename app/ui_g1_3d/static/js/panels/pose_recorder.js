@@ -65,6 +65,13 @@ class PoseRecorderPanel {
 
   async mirrorArm(button) {
     const sourcePoseType = button.dataset.mirrorArm;
+    const sourceJointPositions = {};
+    for (const slider of this.sliders) {
+      const row = slider.closest("[data-joint-row]");
+      if (row.dataset.jointGroup === sourcePoseType) {
+        sourceJointPositions[slider.dataset.jointName] = Number(slider.value);
+      }
+    }
     for (const mirrorButton of this.mirrorButtons) {
       mirrorButton.disabled = true;
     }
@@ -78,6 +85,7 @@ class PoseRecorderPanel {
         },
         body: JSON.stringify({
           source_pose_type: sourcePoseType,
+          joint_positions: sourceJointPositions,
         }),
       });
       const result = await response.json();

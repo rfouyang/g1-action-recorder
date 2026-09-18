@@ -66,11 +66,12 @@ class SavePoseCommand(BaseModel):
 
 
 class MirrorArmCommand(BaseModel):
-    """An anatomical source arm to capture from the live MuJoCo editor."""
+    """An anatomical source arm and its current browser editor values."""
 
     model_config = ConfigDict(extra="forbid")
 
     source_pose_type: PoseType
+    joint_positions: dict[str, float] = Field(min_length=1)
 
 
 class PlayActionCommand(BaseModel):
@@ -187,6 +188,7 @@ def mirror_recorder_arm(
             PoseRecorderPanel.mirror_arm(
                 context=UIContext.from_request(request),
                 source_pose_type=command.source_pose_type,
+                source_positions=command.joint_positions,
             )
         )
     except ValueError as error:

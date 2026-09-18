@@ -138,6 +138,7 @@ class G13DWebAppTest(unittest.TestCase):
         self.assertIn("range-accent", response.text)
         self.assertIn('data-mirror-arm="left_arm"', response.text)
         self.assertIn('data-mirror-arm="right_arm"', response.text)
+        self.assertIn("pose_recorder.js?v=2", response.text)
         self.assertIn('value="concierge_init"', response.text)
         self.assertEqual(response.text.count("data-joint-reset"), 17)
         self.assertNotIn(
@@ -183,11 +184,12 @@ class G13DWebAppTest(unittest.TestCase):
                 strict=True,
             )
         )
-        self.robot_application.simulation.update_joint_positions(left_values)
-
         response = self.client.post(
             "/ui/g1-3d/pose-recorder/mirror-arm",
-            json={"source_pose_type": "left_arm"},
+            json={
+                "source_pose_type": "left_arm",
+                "joint_positions": left_values,
+            },
         )
 
         self.assertEqual(response.status_code, 200)
