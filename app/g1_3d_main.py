@@ -12,6 +12,7 @@ from pathlib import Path
 import uvicorn
 from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
+from uvicorn.middleware.proxy_headers import ProxyHeadersMiddleware
 
 # Make direct IDE/file execution behave the same as ``python -m app.g1_3d_main``.
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
@@ -65,6 +66,8 @@ def create_web_app(
         version="0.1.0",
         lifespan=lifespan,
     )
+    # Trust ingress/proxy Forwarded headers so absolute urls (e.g. TTS) stay https.
+    web_app.add_middleware(ProxyHeadersMiddleware, trusted_hosts="*")
     web_app.mount(
         "/static/g1-3d",
         StaticFiles(directory=STATIC_DIR),

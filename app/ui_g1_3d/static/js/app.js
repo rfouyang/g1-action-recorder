@@ -67,14 +67,22 @@ class ViserViewer {
     if (!this.frame) {
       return;
     }
-    const port = this.frame.dataset.viserPort;
-    this.frame.src = `${window.location.protocol}//${window.location.hostname}:${port}/`;
+    this.frame.src = this.resolveViserUrl();
     this.frame.addEventListener("load", () => this.setConnectionState("ready"));
     this.frame.addEventListener("error", () => this.setConnectionState("error"));
 
     for (const button of this.cameraButtons) {
       button.addEventListener("click", () => this.selectCamera(button));
     }
+  }
+
+  resolveViserUrl() {
+    const configured = (this.frame.dataset.viserUrl || "").trim();
+    if (configured) {
+      return configured.endsWith("/") ? configured : `${configured}/`;
+    }
+    const port = this.frame.dataset.viserPort;
+    return `${window.location.protocol}//${window.location.hostname}:${port}/`;
   }
 
   async selectCamera(button) {

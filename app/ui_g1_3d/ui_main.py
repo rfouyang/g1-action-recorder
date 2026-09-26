@@ -121,6 +121,7 @@ def home(request: Request) -> HTMLResponse:
         "model_id": context.app.joint_schema.model_id,
         "initial_pose_name": context.app.settings.initial_base_pose_name,
         "viser_port": context.viser.port,
+        "viser_public_url": context.app.settings.viser_public_url or "",
         **PoseRecorderPanel.template_context(context),
         **PoseComposerPanel.template_context(context),
         **ActionComposerPanel.template_context(context),

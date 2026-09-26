@@ -5,37 +5,38 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="description" content="G1 pose and action engineering console">
     <title>G1 Action Recorder · Motion Studio</title>
+    {# Relative asset URLs stay on the browser scheme/host behind TLS ingress. #}
     <link
       rel="stylesheet"
-      href="{{ url_for('g1_3d_static', path='/css/app.css') }}?v=3"
+      href="/static/g1-3d/css/app.css?v=3"
     >
     <script
       defer
-      src="{{ url_for('g1_3d_static', path='/js/websocket.js') }}"
+      src="/static/g1-3d/js/websocket.js"
     ></script>
     <script
       defer
-      src="{{ url_for('g1_3d_static', path='/js/panels/pose_recorder.js') }}?v=2"
+      src="/static/g1-3d/js/panels/pose_recorder.js?v=2"
     ></script>
     <script
       defer
-      src="{{ url_for('g1_3d_static', path='/js/panels/pose_composer.js') }}"
+      src="/static/g1-3d/js/panels/pose_composer.js"
     ></script>
     <script
       defer
-      src="{{ url_for('g1_3d_static', path='/js/panels/action.js') }}"
+      src="/static/g1-3d/js/panels/action.js"
     ></script>
     <script
       defer
-      src="{{ url_for('g1_3d_static', path='/js/panels/action_player.js') }}"
+      src="/static/g1-3d/js/panels/action_player.js"
     ></script>
     <script
       defer
-      src="{{ url_for('g1_3d_static', path='/js/panels/speech.js') }}?v=5"
+      src="/static/g1-3d/js/panels/speech.js?v=5"
     ></script>
     <script
       defer
-      src="{{ url_for('g1_3d_static', path='/js/app.js') }}?v=3"
+      src="/static/g1-3d/js/app.js?v=4"
     ></script>
   </head>
   <body class="h-screen min-h-[42rem] overflow-hidden bg-base-200 text-base-content antialiased">

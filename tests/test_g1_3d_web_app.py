@@ -86,8 +86,33 @@ class G13DWebAppTest(unittest.TestCase):
             f'data-viser-port="{self.client.app.state.viser.port}"',
             response.text,
         )
+        self.assertIn('data-viser-url=""', response.text)
         self.assertNotIn("Viser scene connects in the next step", response.text)
         self.assertEqual(response.text.count("data-camera-view="), 6)
+
+    def test_ui_exposes_configured_public_viser_url(self) -> None:
+        settings = AppSettings(
+            viser_port=0,
+            viser_public_url="https://g1-3d-viser.example.com",
+        )
+        temporary_root = Path(self.temporary_directory.name) / "public-viser"
+        application = RobotApplication.create(
+            settings=settings,
+            pose_dir=temporary_root / "poses",
+            action_definition_dir=temporary_root / "actions",
+            action_trajectory_dir=temporary_root / "trajectories",
+            action_preview_dir=temporary_root / "previews",
+            tts_dir=temporary_root / "tts",
+            byteplus_helper=FakeBytePlusTtsHelper(),
+        )
+        with TestClient(create_web_app(robot_application=application)) as client:
+            response = client.get("/")
+
+        self.assertEqual(response.status_code, 200)
+        self.assertIn(
+            'data-viser-url="https://g1-3d-viser.example.com"',
+            response.text,
+        )
 
     def test_speech_panel_generates_lists_and_downloads_wav(self) -> None:
         page = self.client.get("/")
@@ -121,7 +146,7 @@ class G13DWebAppTest(unittest.TestCase):
         self.assertIn('id="speech-style-instruction"', page.text)
         self.assertIn('data-workspace-viewer', page.text)
         self.assertIn("app.css?v=3", page.text)
-        self.assertIn("app.js?v=3", page.text)
+        self.assertIn("app.js?v=4", page.text)
         self.assertIn("speech.js?v=5", page.text)
         self.assertEqual(generated.status_code, 200)
         self.assertEqual(generated.json()["wav_filename"], "concierge_welcome.wav")

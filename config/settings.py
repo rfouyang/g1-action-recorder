@@ -23,19 +23,30 @@ class AppSettings:
     g1_3d_port: int = 8000
     viser_host: str = "127.0.0.1"
     viser_port: int = 8081
+    # Browser-facing Viser origin when it differs from hostname:viser_port
+    # (for example a dedicated Kubernetes Ingress hostname).
+    viser_public_url: str | None = None
     initial_base_pose_name: str = CONCIERGE_INITIAL_POSE_NAME
     byteplus_api_key: str | None = None
 
     @classmethod
     def from_env(cls) -> AppSettings:
-        """Load local application secrets without exposing them to callers."""
+        """Load local secrets and optional host/port overrides from the environment."""
         load_dotenv(PROJECT_ROOT / ".env")
+        public_url = os.getenv("VISER_PUBLIC_URL", "").strip() or None
+        if public_url is not None:
+            public_url = public_url.rstrip("/")
         return cls(
+            g1_3d_host=os.getenv("G1_3D_HOST", "127.0.0.1"),
+            g1_3d_port=int(os.getenv("G1_3D_PORT", "8000")),
+            viser_host=os.getenv("VISER_HOST", "127.0.0.1"),
+            viser_port=int(os.getenv("VISER_PORT", "8081")),
+            viser_public_url=public_url,
             byteplus_api_key=(
                 os.getenv("BYTEPLUS_API_KEY")
                 or os.getenv("BYTEPLUS_APY_KEY")
                 or None
-            )
+            ),
         )
 
     @property
