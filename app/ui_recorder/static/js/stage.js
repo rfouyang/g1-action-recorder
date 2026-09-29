@@ -54,10 +54,19 @@ class Viewer {
   }
 
   start() {
-    this.frame.src = `${location.protocol}//${location.hostname}:${this.frame.dataset.port}/`;
+    this.frame.src = this.resolveViserUrl();
     for (const button of this.buttons) {
       button.addEventListener("click", () => this.setView(button));
     }
+  }
+
+  resolveViserUrl() {
+    // VISER_PUBLIC_URL when the iframe must hit a dedicated Ingress host, not hostname:port.
+    const configured = (this.frame.dataset.viserUrl || "").trim();
+    if (configured) {
+      return configured.endsWith("/") ? configured : `${configured}/`;
+    }
+    return `${location.protocol}//${location.hostname}:${this.frame.dataset.port}/`;
   }
 
   async setView(button) {

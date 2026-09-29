@@ -13,3 +13,5 @@ node_modules/
 # Logs and demo output
 output/
 data/.trash/
+
+*.DS_Store

@@ -14,7 +14,7 @@ from loguru import logger
 from component.map_display.layer_image import LayerImage
 from component.map_display.scene_sync import SceneSync
 from component.map_storage.service import MapDocument, MapStorage
-from config.settings import use_utf8_output
+from config.settings import MapViewerConfig, use_utf8_output
 
 
 class MapDisplay:
@@ -24,7 +24,8 @@ class MapDisplay:
 
     @property
     def viewer_url(self) -> str:
-        viewer_url = self.scene.url
+        # MAP_VISER_PUBLIC_URL when the iframe must hit a dedicated Ingress host.
+        viewer_url = MapViewerConfig.PUBLIC_URL or self.scene.url
         return viewer_url
 
     def start_viewer(self, document: MapDocument | None) -> None:

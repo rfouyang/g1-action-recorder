@@ -1,0 +1,11 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: g1-3d-config
+  labels:
+    app.kubernetes.io/name: g1-3d
+    app.kubernetes.io/component: authoring-console
+data:
+  BYTEPLUS_API_BASE_URL: "https://voice.ap-southeast-1.bytepluses.com"
+  BYTEPLUS_TTS_RESOURCE_ID: "seed-tts-2.0"
+  MINIMAX_API_BASE_URL: "https://api.minimax.io"

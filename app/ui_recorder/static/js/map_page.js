@@ -628,6 +628,20 @@ function bindPanels() {
   document.getElementById("map-save").addEventListener("click", () => runInOrder(saveMap));
 }
 
+function resolveViewerUrl(viewerUrl) {
+  // MAP_VISER_PUBLIC_URL is already a full origin; otherwise rewrite loopback/bind-all to the page host.
+  try {
+    const url = new URL(viewerUrl);
+    if (url.hostname === "127.0.0.1" || url.hostname === "0.0.0.0" || url.hostname === "localhost") {
+      url.protocol = location.protocol;
+      url.hostname = location.hostname;
+    }
+    return url.href.endsWith("/") ? url.href : `${url.href}/`;
+  } catch {
+    return viewerUrl.replace("127.0.0.1", location.hostname).replace("0.0.0.0", location.hostname);
+  }
+}
+
 async function startMap() {
   // Opening a map reads its point clouds (a few seconds), so it waits until the Map page is first shown.
   if (mapStarted) {
@@ -643,7 +657,7 @@ async function startMap() {
   showMapTab("tools");
   document.getElementById("map-tool-hint").textContent = "Loading the map…";
   const info = await api("GET", "/api/map");
-  document.getElementById("map-viewer").src = info.viewer_url.replace("127.0.0.1", location.hostname);
+  document.getElementById("map-viewer").src = resolveViewerUrl(info.viewer_url);
   if (!info.loaded) {
     document.getElementById("map-empty").classList.replace("hidden", "flex");
     document.getElementById("map-tool-hint").textContent = "";

@@ -20,8 +20,8 @@ def use_utf8_output() -> None:
 
 
 class ServerConfig:
-    HOST = "127.0.0.1"
-    PORT = int(os.getenv("G1_RECORDER_PORT", "8930"))
+    HOST = os.getenv("G1_RECORDER_HOST", "127.0.0.1")
+    PORT = int(os.getenv("G1_RECORDER_PORT", "8000"))
     LOG_LEVEL = "INFO"
 
 
@@ -67,8 +67,10 @@ class PreviewConfig:
 
 
 class ViewerConfig:
-    HOST = "127.0.0.1"
-    PORT = int(os.getenv("G1_RECORDER_VISER_PORT", "8931"))
+    HOST = os.getenv("G1_RECORDER_VISER_HOST", "127.0.0.1")
+    PORT = int(os.getenv("G1_RECORDER_VISER_PORT", "8001"))
+    # Browser-facing origin when it differs from hostname:port (e.g. a Kubernetes Ingress).
+    PUBLIC_URL = (os.getenv("VISER_PUBLIC_URL", "").strip().rstrip("/") or None)
     UPDATE_HZ = 30.0
     # Robot-relative presets: the G1 faces +X, its own left is +Y.
     CAMERA_DISTANCE = 2.3
@@ -237,9 +239,11 @@ class MapDisplayConfig:
 
 
 class MapViewerConfig:
-    HOST = "127.0.0.1"
+    HOST = os.getenv("G1_RECORDER_MAP_VISER_HOST", "127.0.0.1")
     # Its own Viser server, so the robot view is never disturbed by a map.
-    PORT = int(os.getenv("G1_RECORDER_MAP_VISER_PORT", "8932"))
+    PORT = int(os.getenv("G1_RECORDER_MAP_VISER_PORT", "8002"))
+    # When set (Kubernetes Ingress), the map iframe uses this instead of hostname:PORT.
+    PUBLIC_URL = (os.getenv("MAP_VISER_PUBLIC_URL", "").strip().rstrip("/") or None)
     VOXEL_SIZE = 0.08
     POINT_SIZE = 0.04
     PREVIEW_POINT_SIZE = 0.06

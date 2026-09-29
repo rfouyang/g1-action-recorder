@@ -1,0 +1,112 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: g1-3d
+  labels:
+    app.kubernetes.io/name: g1-3d
+    app.kubernetes.io/component: authoring-console
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: g1-3d
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: g1-3d
+        app.kubernetes.io/component: authoring-console
+    spec:
+      containers:
+        - name: g1-3d
+          image: harbor.chs.gto-stc-aida.com/sysadmin-pub/g1-3d:v0.0.4
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: http
+              containerPort: 8000
+              protocol: TCP
+            - name: viser
+              containerPort: 8001
+              protocol: TCP
+            - name: map-viser
+              containerPort: 8002
+              protocol: TCP
+          env:
+            - name: BYTEPLUS_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: g1-3d-secrets
+                  key: BYTEPLUS_API_KEY
+            - name: MINIMAX_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: g1-3d-secrets
+                  key: MINIMAX_API_KEY
+            - name: BYTEPLUS_API_BASE_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: g1-3d-config
+                  key: BYTEPLUS_API_BASE_URL
+            - name: BYTEPLUS_TTS_RESOURCE_ID
+              valueFrom:
+                configMapKeyRef:
+                  name: g1-3d-config
+                  key: BYTEPLUS_TTS_RESOURCE_ID
+            - name: MINIMAX_API_BASE_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: g1-3d-config
+                  key: MINIMAX_API_BASE_URL
+            - name: G1_RECORDER_HOST
+              value: "0.0.0.0"
+            - name: G1_RECORDER_PORT
+              value: "8000"
+            - name: G1_RECORDER_VISER_HOST
+              value: "0.0.0.0"
+            - name: G1_RECORDER_VISER_PORT
+              value: "8001"
+            - name: G1_RECORDER_MAP_VISER_HOST
+              value: "0.0.0.0"
+            - name: G1_RECORDER_MAP_VISER_PORT
+              value: "8002"
+            # Browser origin for the robot Viser iframe (Ingress hostname, not pod:8001).
+            - name: VISER_PUBLIC_URL
+              value: "https://g1-3d-viser.chs.gto-stc-aida.com"
+            - name: MAP_VISER_PUBLIC_URL
+              value: "https://g1-3d-map-viser.chs.gto-stc-aida.com"
+            - name: MUJOCO_GL
+              value: egl
+            - name: G1_RECORDER_DATA_DIR
+              value: /app/data
+          startupProbe:
+            httpGet:
+              path: /api/robot
+              port: http
+            periodSeconds: 5
+            failureThreshold: 36
+          readinessProbe:
+            httpGet:
+              path: /api/robot
+              port: http
+            periodSeconds: 10
+            timeoutSeconds: 3
+          livenessProbe:
+            httpGet:
+              path: /api/robot
+              port: http
+            periodSeconds: 20
+            timeoutSeconds: 3
+          resources:
+            requests:
+              cpu: 250m
+              memory: 1Gi
+            limits:
+              cpu: "2"
+              memory: 4Gi
+          volumeMounts:
+            - name: g1-3d-data
+              mountPath: /app/data
+      volumes:
+        - name: g1-3d-data
+          persistentVolumeClaim:
+            claimName: g1-3d-pvc-01
+      restartPolicy: Always

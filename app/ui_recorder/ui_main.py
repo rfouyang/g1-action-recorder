@@ -16,7 +16,7 @@ from fastapi.templating import Jinja2Templates
 from loguru import logger
 
 from app.context import recorder_context
-from config.settings import RobotConfig, SpeechConfig, use_utf8_output
+from config.settings import RobotConfig, SpeechConfig, ViewerConfig, use_utf8_output
 
 UI_DIR = Path(__file__).resolve().parent
 STATIC_DIR = UI_DIR / "static"
@@ -32,6 +32,7 @@ def index(request: Request):
         rows.append({**row, "lower_deg": math.ceil(math.degrees(row["lower"]) * 10) / 10,
                      "upper_deg": math.floor(math.degrees(row["upper"]) * 10) / 10})
     context = {"joint_rows": rows, "home": RobotConfig.HOME_POSE_NAME, "viser_port": recorder_context.display.port,
+               "viser_public_url": ViewerConfig.PUBLIC_URL or "",
                "data_dir": _shown_path(recorder_context.data_dir), "pause_choices": SpeechConfig.PAUSE_CHOICES,
                "max_pause": SpeechConfig.MAX_PAUSE_SECONDS}
     page = templates.TemplateResponse(request, "index.html", context)
